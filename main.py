@@ -11,9 +11,11 @@ from webdriver import web
 # url for get the users.
 url = "https://workloads.cloudsdx.io/customers"
 
+# Users will register.
 muleregister.UserRegister()
 
-for login in range(1,2):
+# users will login,browse,add to cart and place a order.
+for login in range(1,6):
     mulelogin.LoginandBrowse()
     mulebrowse.LoginBrowseCart()
     mulepayment.shipping()

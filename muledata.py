@@ -1,8 +1,9 @@
 import csv
 
+mule='/home/pradeep/Desktop/pradeep/Automation/mule.csv'
 #Getting the data of users from a csv file.
 class users():
-    with open("mule.csv", "r") as f_input:
+    with open(mule, "r") as f_input:
         csv_input = csv.DictReader(f_input)
         Id = []
         names = []
