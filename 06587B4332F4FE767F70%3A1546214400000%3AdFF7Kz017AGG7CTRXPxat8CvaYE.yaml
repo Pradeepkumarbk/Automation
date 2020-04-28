@@ -1,0 +1,1615 @@
+# maya-system namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maya-system
+
+
+---
+
+# maya-system-limit-range
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: maya-system-limit-range
+  namespace: maya-system
+  labels:
+    mayadata.io/version: v1.11.1
+spec:
+  limits:
+  - default:
+      cpu: 1
+      memory: 1Gi
+    defaultRequest: 
+      cpu: 50m
+      memory: 50Mi
+    type: Container
+
+
+---
+
+# maya-io service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: maya-io
+  namespace: maya-system
+
+---
+
+# maya-io cluster role binding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: maya-io
+  namespace: maya-system
+subjects:
+- kind: ServiceAccount
+  name: maya-io
+  namespace: maya-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+# maya-credentials secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maya-credentials-4e7d2cf7
+  namespace: maya-system
+type: Opaque
+data:
+  url: "aHR0cHM6Ly9kaXJlY3Rvci5tYXlhZGF0YXN0YWdpbmcuaW8vdjM="
+  access-key: "cmVnaXN0cmF0aW9uVG9rZW4="
+  secret-key: "MDY1ODdCNDMzMkY0RkU3NjdGNzA6MTU0NjIxNDQwMDAwMDpkRkY3S3owMTdBR0c3Q1RSWFB4YXQ4Q3ZhWUU="
+
+---
+
+# cluster-register Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cluster-register
+  namespace: maya-system
+spec:
+  template:
+    spec:
+      serviceAccountName: maya-io
+      restartPolicy: Never
+      containers:
+      - name: cluster-register
+        env: 
+        image: mayadataio/cluster-register:staging-1aff4ac
+        volumeMounts:
+        - name: maya-credentials
+          mountPath: /maya-credentials
+          readOnly: true
+        - name: cortex-agent-volume
+          mountPath: /etc/prometheus
+          readOnly: true
+      volumes:
+      - name: maya-credentials
+        secret:
+          secretName: maya-credentials-4e7d2cf7
+      - name: cortex-agent-volume
+        configMap:
+          name: cortex-agent-config
+
+---
+
+# maya-io-agent daemonset
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: maya-io-agent
+  namespace: maya-system
+  labels:
+    name: maya-io-agent
+    app: maya-io-agent
+spec:
+  selector:
+    matchLabels:
+      name: maya-io-agent
+      app: maya-io-agent
+  template:
+    metadata:
+      labels:
+        name: maya-io-agent
+        app: maya-io-agent
+    spec:
+      serviceAccount: maya-io
+      containers:
+      - name: maya-io-agent
+        command:
+        - /run.sh
+        - k8srun
+        env: 
+        - name: MAYA_ORCHESTRATION
+          value: "kubernetes"
+        - name: MAYA_SKIP_UPGRADE
+          value: "true"
+        - name: MAYA_REGISTRATION_URL
+          value: https://director.mayadatastaging.io/v3/scripts/06587B4332F4FE767F70:1546214400000:dFF7Kz017AGG7CTRXPxat8CvaYE
+        - name: MAYA_URL
+          value: "https://director.mayadatastaging.io/v3"
+        - name: MAYA_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: mayadataio/maya-io-agent:staging-765f791
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: maya-io
+          mountPath: /var/lib/maya-io
+        - name: maya-io-agent-state
+          mountPath: /var/lib/maya
+        - name: lib-modules
+          mountPath: /lib/modules
+          readOnly: true
+        - name: dev
+          mountPath: /host/dev
+      hostNetwork: true
+      hostPID: true
+      volumes:
+      - name: maya-io
+        hostPath:
+          path: /var/lib/maya-io
+      - name: maya-io-agent-state
+        hostPath:
+          path: /var/lib/maya
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: dev
+        hostPath:
+          path: /dev
+  updateStrategy:
+    type: RollingUpdate
+
+---
+
+# status-agent deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: status-agent
+  namespace: maya-system
+  labels:
+    name: status-agent
+    app: status-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: status-agent
+      app: status-agent
+  template:
+    metadata:
+      labels:
+        name: status-agent
+        app: status-agent
+      annotations:
+        checksum/maya-credentials-4e7d2cf7-secret: 65de4b2393abca6185919532668c564ce427e866526125beb8679f055c25648c
+    spec:
+      serviceAccountName: maya-io
+      containers:
+      - name: status-agent
+        env: 
+        image: mayadataio/status-agent:staging-2f7ec8b
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+        volumeMounts:
+        - name: maya-credentials
+          mountPath: /maya-credentials
+          readOnly: true
+      volumes:
+      - name: maya-credentials
+        secret:
+          secretName: maya-credentials-4e7d2cf7
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+  namespace: maya-system
+  labels:
+    name: kube-state-metrics
+    app: kube-state-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: kube-state-metrics
+      app: kube-state-metrics
+  template:
+    metadata:
+      labels:
+        name: kube-state-metrics
+        app: kube-state-metrics
+    spec:
+      serviceAccountName: maya-io
+      containers:
+      - name: kube-state-metrics
+        image: quay.io/coreos/kube-state-metrics:v1.5.0
+        ports:
+        - name: http-metrics
+          containerPort: 80
+        - name: telemetry
+          containerPort: 81
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        command:
+        - "/kube-state-metrics"
+        - --namespace
+        - "openebs,maya-system"
+        - --metric-whitelist
+        - "kube_pod_container_status_waiting_reason,kube_pod_container_status_running,kube_node_status_condition"
+        - --collectors
+        - "pods,nodes"
+      - name: addon-resizer
+        image: k8s.gcr.io/addon-resizer:1.8.3
+        resources:
+          limits:
+            cpu: 150m
+            memory: 50Mi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        command:
+          - /pod_nanny
+          - --container=kube-state-metrics
+          - --cpu=120m
+          - --extra-cpu=1m
+          - --memory=100Mi
+          - --extra-memory=2Mi
+          - --threshold=5
+          - --deployment=kube-state-metrics
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-state-metrics
+  namespace: maya-system
+  labels:
+    name: kube-state-metrics
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  ports:
+  - name: http-metrics
+    port: 80
+    targetPort: http-metrics
+    protocol: TCP
+  - name: telemetry
+    port: 81
+    targetPort: telemetry
+    protocol: TCP
+  selector:
+    name: kube-state-metrics
+    app: kube-state-metrics
+
+---
+
+# fluentd-forwarder configmap
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: fluentd-forwarder
+  namespace: maya-system 
+  labels:
+    k8s-app: fluentd-forwarder
+    version: v1.11.6
+data:
+  system.conf: |-
+    <system>
+      root_dir /tmp/fluentd-buffers/
+    </system>
+
+  containers.input.conf: |-
+    <source>
+      @id fluentd-containers.log
+      @type tail
+      path /var/log/containers/*.log
+      pos_file /var/log/es-containers-test123-fahmh.log.pos
+      time_format %Y-%m-%dT%H:%M:%S.%NZ
+      tag raw.kubernetes.*
+      read_from_head true
+      <parse>
+        @type multi_format
+        <pattern>
+          format json
+          time_key time
+          time_format %Y-%m-%dT%H:%M:%S.%NZ
+        </pattern>
+        <pattern>
+          format /^(?<time>.+) (?<stream>stdout|stderr) [^ ]* (?<log>.*)$/
+          time_format %Y-%m-%dT%H:%M:%S.%N%:z
+        </pattern>
+      </parse>
+    </source>
+
+     # Fetching kubelet logs
+    <source>
+      @type systemd
+      tag kubelet
+      path /var/log/journal
+      matches [{ "_SYSTEMD_UNIT": "kubelet.service" }]
+      read_from_head true
+      <storage>
+        @type local
+        persistent true
+        path /var/log/journald_pos.json
+      </storage>
+      <entry>
+        fields_strip_underscores true
+        fields_lowercase true
+      </entry>
+    </source>
+
+    # Detect exceptions in the log output and forward them as one log entry.
+    <match raw.kubernetes.**>
+      @id raw.kubernetes
+      @type detect_exceptions
+      remove_tag_prefix raw
+      message log
+      stream stream
+      multiline_flush_interval 5
+      max_bytes 500000
+      max_lines 1000
+    </match>
+
+  output.conf: |-
+    # This filter will neglect all the logs before 7 days, it keeps the window of 7 days.
+    # threshold value is in seconds.
+    <filter kubernetes.**>
+      @type time
+      threshold 604800
+    </filter>
+
+    <filter kubernetes.**>
+      @type kubernetes_metadata
+    </filter>
+
+    # Routing kubelet logs
+    <match kubelet>
+      @type relabel
+      @label @MO_LOGS
+    </match>
+
+    # Excluding logs of fluentd
+    <match kubernetes.var.log.containers.**fluentd**.log>
+      @type null
+    </match>
+    
+    # Excluding logs of openebs-monitor-plugin pod
+    <match kubernetes.var.log.containers.**openebs-monitor-plugin**.log>
+      @type null
+    </match>
+    
+    # Routing logs of maya-system namespace
+    <match kubernetes.var.log.containers.**_maya-system_**.log>
+      @type relabel
+      @label @MO_LOGS
+    </match>
+
+    # Routing logs of litmus namespace
+    <match kubernetes.var.log.containers.**_litmus_**.log>
+      @type relabel
+      @label @MO_LOGS
+    </match>
+
+    # Catching pods with label and routing logs
+    <match kubernetes.**>
+      @type rewrite_tag_filter
+      <rule>
+        key $.kubernetes.labels.openebs_io/persistent-volume
+        pattern ^(.+)$
+        tag openebs
+      </rule>
+      <rule>
+        key $.kubernetes.labels.app
+        pattern ^cstor-pool$
+        tag openebs
+      </rule>
+      <rule>
+        key $.kubernetes.labels.openebs_io/component-name
+        pattern ^(maya-apiserver|admission-server|admission-webhook|openebs-localpv-provisioner|ndm|ndm-operator|openebs-provisioner|openebs-snapshot-operator)$
+        tag openebs
+      </rule>
+      <rule>
+        key $.kubernetes.labels.name
+        pattern ^(maya-apiserver|openebs-ndm|openebs-provisioner|openebs-snapshot-operator)$
+        tag openebs
+      </rule>
+    </match>
+
+    # pattern: define custom pattern (regexp) for seaching keys/values
+    # ([\w\-.]+) : key can be of word without space, + denotes match for a single character or more
+    # = : after key equal_to (=) should be there without space (ecode=some.error.code)
+    # here values can be inside quotes and without quotes too, handling these there are three pattern for values seperated with OR (|)
+    # 1. [\w.,'@$%+!;\-\/:\s]+$ : this will match the values with space and without quotes, $ denotes it is a last key value in the log
+    # 2. [\w.,'@$%+!;\-\/:\s]+\s : this will match the values with space and without quotes, \s at the last denotes it is a key value pair in the
+    # middle of the log. Also we can say \s (space) and , (comma) here in the last denotes the delimiter to seperate key value pairs
+    # for ex: { 'log': 'key1=some value with space key2=some more value key3=some more key value' }
+    # key1 and key2 pair will be searched with this pattern (pattern: 2) having space in the end
+    # key3 doesnot have the space at the end after value so in pattern 1 $ is used that denotes the end.
+    # 3. ["']+[\w.,'@$%+!;\-\/:\s]+["']+ : this will match the values inside quotes.
+    <filter openebs>
+      @type kvp
+      parse_key log
+      # fields_key openebs
+      pattern ([\w\-.]+)=([\w\-!@$%^&*()+|~`{}\[\]:;'<>?,.\/\s]+$|[\w\-!@$%^&*()+|~`{}\[\]:;'<>?,.\/\s]+[,\s]|["']+[\w\-!@$%^&*()+|~`{}\[\]:;'<>?,.\/\s]+["']+)
+      strict_key_value false
+    </filter>
+
+    <filter openebs>
+      @type kvp
+      parse_key log
+      # fields_key openebs
+      pattern ([\w\-.]+)":[ ]*"([\w\-!@$%^&*()+|~`{}\[\]:;'<>?,.\/\s]+)
+      strict_key_value false
+    </filter>
+
+    <match openebs>
+      @type rewrite_tag_filter
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.create\.success/i
+        tag openebs.alert.ndm.blockdevice.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.update\.failure/i
+        tag openebs.alert.ndm.blockdevice.update.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.update\.success/i
+        tag openebs.alert.ndm.blockdevice.update.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.deactivate\.failure/i
+        tag openebs.alert.ndm.blockdevice.deactivate.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.deactivate\.success/i
+        tag openebs.alert.ndm.blockdevice.deactivate.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.delete\.failure/i
+        tag openebs.alert.ndm.blockdevice.delete.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.blockdevice\.delete\.success/i
+        tag openebs.alert.ndm.blockdevice.delete.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.create\.success/i
+        tag openebs.alert.ndm.disk.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.update\.failure/i
+        tag openebs.alert.ndm.disk.update.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.update\.success/i
+        tag openebs.alert.ndm.disk.update.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.deactivate\.failure/i
+        tag openebs.alert.ndm.disk.deactivate.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.deactivate\.success/i
+        tag openebs.alert.ndm.disk.deactivate.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.delete\.failure/i
+        tag openebs.alert.ndm.disk.delete.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.disk\.delete\.success/i
+        tag openebs.alert.ndm.disk.delete.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.upgrade\.success/i
+        tag openebs.alert.ndm.upgrade.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /ndm\.upgrade\.task\.failure/i
+        tag openebs.alert.ndm.upgrade.task.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.add\.failure/i
+        tag openebs.alert.jiva.volume.replica.add.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.add\.success/i
+        tag openebs.alert.jiva.volume.replica.add.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.backup\.create\.failure/i
+        tag openebs.alert.jiva.volume.backup.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.backup\.create\.success/i
+        tag openebs.alert.jiva.volume.backup.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.backup\.delete\.failure/i
+        tag openebs.alert.jiva.volume.backup.delete.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.backup\.delete\.success/i
+        tag openebs.alert.jiva.volume.backup.delete.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.backup\.restore\.failure/i
+        tag openebs.alert.jiva.volume.backup.restore.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.backup\.restore\.success/i
+        tag openebs.alert.jiva.volume.backup.restore.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.clone\.failure/i
+        tag openebs.alert.jiva.volume.replica.clone.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.clone\.success/i
+        tag openebs.alert.jiva.volume.replica.clone.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.api\.exited/i
+        tag openebs.alert.jiva.volume.replica.api.exited
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.rpc\.exited/i
+        tag openebs.alert.jiva.volume.replica.rpc.exited
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.sync\.exited/i
+        tag openebs.alert.jiva.volume.replica.sync.exited
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.start\.success/i
+        tag openebs.alert.jiva.volume.replica.start.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.remove\.failure/i
+        tag openebs.alert.jiva.volume.replica.remove.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.remove\.success/i
+        tag openebs.alert.jiva.volume.replica.remove.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.snapshot\.create\.failure/i
+        tag openebs.alert.jiva.snapshot.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.snapshot\.create\.success/i
+        tag openebs.alert.jiva.snapshot.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.snapshot\.revert\.failure/i
+        tag openebs.alert.jiva.snapshot.revert.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.snapshot\.remove\.success/i
+        tag openebs.alert.jiva.snapshot.remove.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.snapshot\.remove\.failure/i
+        tag openebs.alert.jiva.snapshot.remove.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.shutdown/i
+        tag openebs.alert.jiva.volume.replica.shutdown
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.frontend\.shutdown\.failure/i
+        tag openebs.alert.jiva.volume.replica.frontend.shutdown.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /jiva\.volume\.replica\.backend\.shutdown\.failure/i
+        tag openebs.alert.jiva.volume.replica.backend.shutdown.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.pool\.import\.failure/i
+        tag openebs.alert.cstor.pool.import.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.pool\.import\.success/i
+        tag openebs.alert.cstor.pool.import.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.pool\.create\.failure/i
+        tag openebs.alert.cstor.pool.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.pool\.create\.success/i
+        tag openebs.alert.cstor.pool.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.pool\.delete\.failure/i
+        tag openebs.alert.cstor.pool.delete.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.pool\.delete\.success/i
+        tag openebs.alert.cstor.pool.delete.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.replica\.clone\.create\.failure/i
+        tag openebs.alert.cstor.volume.replica.clone.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.replica\.create\.failure/i
+        tag openebs.alert.cstor.volume.replica.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.replica\.clone\.create\.success/i
+        tag openebs.alert.cstor.volume.replica.clone.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.replica\.create\.success/i
+        tag openebs.alert.cstor.volume.replica.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.backup\.create\.failure/i
+        tag openebs.alert.cstor.volume.backup.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.backup\.create\.success/i
+        tag openebs.alert.cstor.volume.backup.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.restore\.failure/i
+        tag openebs.alert.cstor.volume.restore.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.restore\.success/i
+        tag openebs.alert.cstor.volume.restore.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.delete\.failure/i
+        tag openebs.alert.cstor.volume.delete.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.delete\.success/i
+        tag openebs.alert.cstor.volume.delete.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.target\.create\.failure/i
+        tag openebs.alert.cstor.volume.target.create.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.target\.create\.success/i
+        tag openebs.alert.cstor.volume.target.create.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.target\.resize\.failure/i
+        tag openebs.alert.cstor.volume.target.resize.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.volume\.target\.resize\.success/i
+        tag openebs.alert.cstor.volume.target.resize.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.local\.pv\.delete\.failure/i
+        tag openebs.alert.cstor.local.pv.delete.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.local\.pv\.delete\.success/i
+        tag openebs.alert.cstor.local.pv.delete.success
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.local\.pv\.provision\.failure/i
+        tag openebs.alert.cstor.local.pv.provision.failure
+      </rule>
+      <rule>
+        key eventcode
+        pattern /cstor\.local\.pv\.provision\.success/i
+        tag openebs.alert.cstor.local.pv.provision.success
+      </rule>
+      # pattern matching logs
+      <rule>
+        key log
+        pattern /(failed to get any path for iscsi disk|connection refused|cannot make connection|no portals found)/i
+        tag openebs.error.iscsi-disk-path-failure
+      </rule>
+      <rule>
+        key log
+        pattern /(I\/O error|EXT4-fs error|remounting filesystem read-only|previous I\/O error to superblock detected)/i
+        tag openebs.error.volume-went-read-only
+      </rule>
+      <rule>
+        key log
+        pattern /(healthy count|degraded count|non-quorum-replica count)/i
+        tag openebs.error.cvr-health-status
+      </rule>
+      <rule>
+        key log
+        pattern /failed to execute runtask/i
+        tag openebs.error.runtask-execution-failure
+      </rule>
+      # Jiva
+      <rule>
+        key log
+        pattern /(connection reset by peer|error reading from wire|exiting rpc reader|Closing rpc server)/i
+        tag openebs.error.data-connection-failure
+      </rule>
+      <rule>
+        key log
+        pattern /(expected [0-9]+ no of replica pod|failed to execute runtask)/i
+        tag openebs.error.jiva-volume-provision-failure
+      </rule>
+      <rule>
+        key log
+        pattern /replicas are less/i
+        tag openebs.error.replication-factor-failure
+      </rule>
+      <rule>
+        key log
+        pattern /replica in rebuilding state/i
+        tag openebs.error.replica-rebuilding
+      </rule>
+      <rule>
+        key log
+        pattern /Mode: ReadOnly/i
+        tag openebs.error.read-only-jiva
+      </rule>
+      <rule>
+        key log
+        pattern /Incomplete write expected/i
+        tag openebs.error.multiwriter-error-jiva
+      </rule>
+      <rule>
+        key log
+        pattern /Failed to add replica/i
+        tag openebs.error.replica-add-failure-jiva
+      </rule>
+      <rule>
+        key log
+        pattern /Fail to get size of file/i
+        tag openebs.error.get-file-size-failure-jiva
+      </rule>
+      # NDM
+      <rule>
+        key log
+        pattern /Disk CRD is not available yet/i
+        tag openebs.error.disk-crd-not-installed-in-cluster
+      </rule>
+      <rule>
+        key log
+        pattern /BlockDevice CRD is not available yet/i
+        tag openebs.error.blockdevice-not-installed-in-cluster
+      </rule>
+      <rule>
+        key log
+        pattern /could not get device mount attributes/i
+        tag openebs.error.device-getting-mount-information-failure
+      </rule>
+      <rule>
+        key log
+        pattern /device type is not supported yet/i
+        tag openebs.error.device-not-supported
+      </rule>
+      <rule>
+        key log
+        pattern /Unable to get device info/i
+        tag openebs.error.seachest-probe-failure
+      </rule>
+      <rule>
+        key log
+        pattern /DetectScsiTypeError:no such file or directory/i
+        tag openebs.error.smartprobe-failure
+      </rule>
+      # cStor
+      <rule>
+        key log
+        pattern /(Unable to clear label|failed to check state|Unable to clear labels from the disks|Unable to create pool|contains a ext4 filesystem|pool creation failure)/i
+        tag openebs.error.cstor-pool-provision-failure
+      </rule>
+      <rule>
+        key log
+        pattern /(not enough pools available to create replicas|failed to provision volume|failed to create volume)/i
+        tag openebs.error.cstor-volume-provision-failure
+      </rule>
+      <rule>
+        key log
+        pattern ^(.+)$
+        tag openebs.log
+      </rule>
+    </match>
+
+    <match openebs**>
+      @type relabel
+      @label @MO_LOGS
+    </match>
+
+    <match **>
+      @type null
+    </match>
+
+    # Adding field for cluster_id
+    <label @MO_LOGS>
+      <filter **>
+        @type elasticsearch_genid  # elasticsearch_genid filter generates a unique _hash key for each record to prevent duplicates
+        hash_id_key _hash  # storing generated hash id key (default is _hash)
+      </filter>
+
+      <filter openebs.error.**>
+        @type record_transformer
+        <record>
+          openebs_errors ${tag_parts[2]}
+        </record>
+      </filter>
+
+      <filter **>
+        @type record_transformer
+        <record>
+          user_id 0F6C45D1F8B74D9BDA62
+          cluster_id test123-fahmh
+        </record>
+      </filter>
+
+      <match **>
+        @type forward
+        compress gzip
+        require_ack_response true
+        ack_response_timeout 30
+        recover_wait 10s
+        heartbeat_interval 1s
+        phi_threshold 16
+        send_timeout 10s
+        hard_timeout 10s
+        expire_dns_cache 15
+        heartbeat_type tcp
+        <buffer>
+          @type file
+          path /var/log/fluentd-buffers/kubernetes.system.buffer.forwarder
+          flush_mode interval
+          flush_thread_count 8
+          flush_interval 10s
+          retry_forever 
+          retry_max_interval 15
+          chunk_limit_size 2M
+          queue_limit_length 32
+          overflow_action block
+        </buffer>
+        <server>
+          name fluentd-aggregator
+          host fluentd-aggregator
+          port 24224
+          weight 60
+        </server>
+      </match>
+    </label>
+
+---
+
+# fluentd-aggregator configmap
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: fluentd-aggregator
+  namespace: maya-system
+  labels:
+    k8s-app: fluentd-aggregator
+    version: v1.11.5
+data:
+  system.conf: |-
+    <system>
+      root_dir /tmp/fluentd-buffers/
+    </system>
+  output.conf: |-
+    <source>
+      @type forward
+      port 24224
+    </source>
+    <match **>
+      @id elasticsearch
+      @type elasticsearch
+      id_key _hash  # specify same key name which is specified in hash_id_key
+      remove_keys _hash  # Elasticsearch doesn't like keys that start with _ so remove it  
+      logstash_format true
+      include_timestamp true
+      unrecoverable_error_types ["out_of_memory_error"]
+      # this indicates that the plugin should reset connection on any error
+      reconnect_on_error true
+      reload_on_failure true
+      reload_connections false
+      request_timeout 20s
+      # logstash_prefix value gets added as prefix to index
+      logstash_prefix 0F6C45D1F8B74D9BDA62-test123-fahmh
+      # Important (required to connect with elasticsearch with https request)
+      scheme https
+      ssl_version TLSv1_2
+      include_tag_key true
+      hosts https://director.mayadatastaging.io/elasticsearch/
+      # Elasticsearch authentication 
+      user 0F6C45D1F8B74D9BDA62
+      password 26rTeXdskSxAEQvhrPKEXTwNXji4dMsWVATZDZ1N
+      <buffer>
+        @type file
+        path /var/log/fluentd-buffers/kubernetes.system.buffer.aggregator
+        flush_mode interval
+        flush_at_shutdown true
+        retry_type exponential_backoff
+        flush_thread_count 3
+        flush_interval 5s
+        retry_forever
+        retry_max_interval 30
+        chunk_limit_size 2M
+        queue_limit_length 32
+        overflow_action block
+      </buffer>
+    </match>
+
+---
+
+# fluentd-aggregator deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluentd-aggregator
+  namespace: maya-system
+  labels:
+    name: fluentd-aggregator
+    app: fluentd-aggregator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: fluentd-aggregator
+      app: fluentd-aggregator
+  template:
+    metadata:
+      annotations:
+        checksum/fluentd-aggregator: b964b40099eaf6422458736239a73732903a3fe372a5ef7a839e6b7f351a65ff
+      labels:
+        name: fluentd-aggregator
+        app: fluentd-aggregator
+    spec:
+      initContainers:
+      - name: init-agent
+        image: mayadataio/maya-init:v1.11.1
+        command:
+        - sh
+        - "-c"
+        - |
+          set -ex
+          export MAYA=$(kubectl get ClusterRoleBinding | grep -w maya-io | awk '{print $1}')
+          echo $MAYA
+          until [ ! -z "$MAYA" ]
+          do
+             echo "wating for ClusterRoleBinding"
+             sleep 1;
+          done
+      containers:
+      - name: fluentd-aggregator
+        env: 
+        image: mayadataio/maya-fluentd:v1.11.18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: fwd-input
+          containerPort: 24224
+          protocol: TCP
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/fluent/config.d
+      volumes:
+      - name: config-volume
+        configMap:
+          name: "fluentd-aggregator"
+      # Give the aggregator ample time to flush it's logs
+      terminationGracePeriodSeconds: 20
+      serviceAccountName: maya-io
+      
+---
+
+# fluentd-aggregator service
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluentd-aggregator
+  namespace: maya-system
+  labels:
+    name: fluentd-aggregator
+spec:
+  ports:
+  - port: 24224
+    protocol: TCP
+    targetPort: 24224
+  selector:
+    name: fluentd-aggregator
+    app: fluentd-aggregator
+
+---
+
+# fluentd-forwarder daemonset
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd-forwarder
+  namespace: maya-system
+  labels:
+    name: fluentd-forwarder
+    app: fluentd-forwarder
+    kubernetes.io/cluster-service: "true"
+spec:
+  selector:
+    matchLabels:
+      name: fluentd-forwarder
+      app: fluentd-forwarder
+  template:
+    metadata:
+      annotations:
+        checksum/fluentd-forwarder: f1db16d54d4f615183dee9909b2d238ba73fc422144a61aebf3d446dc30e9fef
+      labels:
+        name: fluentd-forwarder
+        app: fluentd-forwarder
+        kubernetes.io/cluster-service: "true"
+    spec:
+      serviceAccountName: maya-io
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      initContainers:
+      - name: init-agent
+        image: mayadataio/maya-init:v1.11.1
+        command:
+        - sh
+        - "-c"
+        - |
+          set -ex
+          export MAYA=$(kubectl get ClusterRoleBinding | grep -w maya-io | awk '{print $1}')
+          echo $MAYA
+          until [ ! -z "$MAYA" ]
+          do
+             echo "wating for ClusterRoleBinding"
+             sleep 1;
+          done
+      containers:
+      - name: fluentd-forwarder
+        image: mayadataio/maya-fluentd:v1.11.18
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: config-volume
+          mountPath: /etc/fluent/config.d
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      terminationGracePeriodSeconds: 20
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: config-volume
+        configMap:
+          name: fluentd-forwarder
+
+---
+
+# openebs-manager deployment and service yaml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: openebs-manager
+  namespace: maya-system
+  labels:
+    name: openebs-manager
+    app: openebs-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: openebs-manager
+      app: openebs-manager
+  template:
+    metadata:
+      labels:
+        name: openebs-manager
+        app: openebs-manager
+    spec:
+      containers:
+      - name: openebs-manager
+        image: mayadataio/openebs-manager:staging-7dff4db
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env: 
+        - name: MO_URL
+          value: "https://director.mayadatastaging.io/v3"
+        - name: API_USERNAME
+          value: "0F6C45D1F8B74D9BDA62"
+        - name: API_PASSWORD
+          value: "26rTeXdskSxAEQvhrPKEXTwNXji4dMsWVATZDZ1N"
+        - name: GROUP_ID
+          value: "2161"
+      serviceAccountName: maya-io
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: openebs-manager-service
+  namespace: maya-system
+  labels:
+    name: openebs-manager-service
+spec:
+  selector:
+    name: openebs-manager
+    app: openebs-manager
+  ports:
+    - name: openebs-manager-app
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+
+---
+
+# cortex-agent-config configmap
+kind: ConfigMap
+metadata:
+  name: cortex-agent-config
+  namespace: maya-system
+  labels:
+    version: v1.11.6
+apiVersion: v1
+data:
+  prometheus.yml: |-
+    global:
+      external_labels:
+        slave: test123-fahmh
+      scrape_interval: 1m
+      evaluation_interval: 1m
+    remote_write:
+    - url: 'https://director.mayadatastaging.io/maya-cortex-push/api/prom/push'
+      basic_auth:
+        username: 0F6C45D1F8B74D9BDA62
+        password: 26rTeXdskSxAEQvhrPKEXTwNXji4dMsWVATZDZ1N
+      proxy_url: 
+    remote_read:
+    - url: 'https://director.mayadatastaging.io/maya-cortex-pull/api/prom/read'
+      basic_auth:
+        username: 0F6C45D1F8B74D9BDA62
+        password: 26rTeXdskSxAEQvhrPKEXTwNXji4dMsWVATZDZ1N
+      proxy_url: 
+    scrape_configs:
+    - job_name: 'cluster_uuid_test123-fahmh_cortex-agent-retriever'
+      scheme: http
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_name]
+        regex: cortex-agent-retriever
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+    - job_name: 'cluster_uuid_test123-fahmh_openebs-volumes'
+      scheme: http
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_monitoring]
+        regex: volume_exporter_prometheus
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+      - source_labels: [__meta_kubernetes_pod_label_openebs_io_persistent_volume]
+        action: replace
+        target_label: openebs_pv
+      - source_labels: [__meta_kubernetes_pod_label_openebs_io_persistent_volume_claim]
+        action: replace
+        target_label: openebs_pvc
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: drop
+        regex: '(.*)9501'
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: drop
+        regex: '(.*)3260'
+    - job_name: 'cluster_uuid_test123-fahmh_kube-state-metrics'
+      scheme: http
+      kubernetes_sd_configs:
+      - role: service
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        regex: maya-system
+        action: keep
+      - source_labels: [__meta_kubernetes_service_name]
+        regex: kube-state-metrics
+        action: keep
+      - source_labels: [__meta_kubernetes_service_port_name]
+        regex: 'http-metrics'
+        action: keep
+    - job_name: 'cluster_uuid_test123-fahmh_openebs-pools'
+      scheme: http
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_openebs_io_monitoring]
+        regex: pool_exporter_prometheus
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+      - source_labels: [__meta_kubernetes_pod_label_openebs_io_storage_pool_claim]
+        action: replace
+        target_label: storage_pool_claim
+      - source_labels: [__meta_kubernetes_pod_label_openebs_io_cstor_pool]
+        action: replace
+        target_label: cstor_pool
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: ${1}:${2}
+        target_label: __address__
+    - job_name: 'cluster_uuid_test123-fahmh_chaos-metrics'
+      scrape_interval: 5s
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: chaos-exporter
+        action: keep
+
+
+---
+
+# cortex-agent-deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cortex-agent
+  namespace: maya-system
+  labels:
+    name: cortex-agent-retriever
+    app: cortex-agent-retriever
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: cortex-agent-retriever
+      app: cortex-agent-retriever
+  template:
+    metadata:
+      labels:
+        name: cortex-agent-retriever
+        app: cortex-agent-retriever
+      annotations:
+        checksum/cortex-agent-config: cc35408f20683fb1e54804666dffaef431f6076868af10f68d5eb8585f628f11
+    spec:
+      serviceAccountName: maya-io
+      initContainers:
+      - name: init-agent
+        image: mayadataio/maya-init:v1.11.1
+        command:
+        - sh
+        - "-c"
+        - |
+          set -ex
+          export MAYA=$(kubectl get ClusterRoleBinding | grep -w maya-io | awk '{print $1}')
+          echo $MAYA
+          until [ ! -z "$MAYA" ]
+          do
+             echo "wating for ClusterRoleBinding"
+             sleep 1;
+          done
+      containers:
+        - name: retrieval
+          image: prom/prometheus:v1.7.1
+          args:
+            - "-config.file=/etc/prometheus/prometheus.yml"
+            - "-web.listen-address=:80"
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: cortex-agent-volume
+              mountPath: /etc/prometheus
+      volumes:
+        - name: cortex-agent-volume
+          configMap:
+            name: cortex-agent-config
+
+---
+
+# cortex-agent-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: cortex-agent-service
+  namespace: maya-system
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    name: cortex-agent-retriever
+
+---
+
+# maya-scope-deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weave-scope-app
+  namespace: maya-system
+  labels:
+    name: weave-scope-app
+    app: weave-scope-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: weave-scope-app
+      app: weave-scope-app
+  template:
+    metadata:
+      labels:
+        name: weave-scope-app
+        app: weave-scope-app
+    spec:
+      serviceAccountName: maya-io
+      containers:
+        - name: app
+          args:
+            - '--mode=app'
+          image: openebs/scope:v1.11.2143
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4040
+              protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: weave-scope-app
+  labels:
+    name: weave-scope-app
+  namespace: maya-system
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 4040
+  selector:
+    name: weave-scope-app
+    app: weave-scope-app
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weave-scope-cluster-agent
+  namespace: maya-system
+  labels:
+    name: weave-scope-cluster-agent
+    app: weave-scope-cluster-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: weave-scope-cluster-agent
+      app: weave-scope-cluster-agent
+  template:
+    metadata:
+      labels:
+        name: weave-scope-cluster-agent
+        app: weave-scope-cluster-agent
+    spec:
+      serviceAccountName: maya-io
+      containers:
+        - name: app
+          args:
+            - '--mode=probe'
+            - '--probe-only'
+            - '--probe.kubernetes.role=cluster'
+            - 'weave-scope-app:80'
+          image: openebs/scope:v1.11.2143
+          imagePullPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: weave-scope-agent
+  namespace: maya-system
+  labels:
+    name: weave-scope-agent
+    app: weave-scope-agent
+spec:
+  selector:
+    matchLabels:
+      name: weave-scope-agent
+      app: weave-scope-agent
+  template:
+    metadata:
+      labels:
+        name: weave-scope-agent
+        app: weave-scope-agent
+    spec:
+      containers:
+        - name: scope-agent
+          args:
+            - '--mode=probe'
+            - '--probe-only'
+            - '--probe.docker.bridge=docker0'
+            - '--probe.docker=true'
+            - '--probe.kubernetes.role=host'
+            - 'weave-scope-app:80'
+          env: []
+          image: openebs/scope:v1.11.2143
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: sys-kernel-debug
+              mountPath: /sys/kernel/debug
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      hostPID: true
+      serviceAccountName: maya-io
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: sys-kernel-debug
+          hostPath:
+            path: /sys/kernel/debug
+  updateStrategy:
+    type: RollingUpdate
+
+
+---
+
+# upgrade-controller deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upgrade-controller
+  namespace: maya-system
+  labels:
+    name: upgrade-controller
+    app: upgrade-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: upgrade-controller
+      app: upgrade-controller
+  template:
+    metadata:
+      labels:
+        name: upgrade-controller
+        app: upgrade-controller
+      annotations:
+        checksum/maya-credentials-4e7d2cf7-secret: 65de4b2393abca6185919532668c564ce427e866526125beb8679f055c25648c
+    spec:
+      serviceAccountName: maya-io
+      containers:
+      - name: upgrade-controller
+        env: 
+        - name: ENABLE_DEBUG_LOG
+          value: "false"
+        - name: RUN_INTERVAL
+          value: "300"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: mayadataio/upgrade-controller:staging-2f7ec8b
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: maya-credentials
+          mountPath: /maya-credentials
+          readOnly: true
+      volumes:
+      - name: maya-credentials
+        secret:
+          secretName: maya-credentials-4e7d2cf7

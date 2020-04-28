@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: elasticsearch-logging
+  namespace: efk
+spec:
+  selector:
+    app: elasticsearch-logging
+  ports:
+  - protocol: TCP
+    port: 9200
+    targetPort: db
+

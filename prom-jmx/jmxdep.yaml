@@ -1,0 +1,38 @@
+# meant to be applied using kustomize, or with pre-1.14 kubectl:
+# kubectl --namespace kafka patch statefulset kafka --patch "$(cat prometheus/50-kafka-jmx-exporter-patch.yml )"
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: metrics
+        image: solsson/kafka-prometheus-jmx-exporter
+        command:
+        - java
+        - -jar
+        - jmx_prometheus_httpserver.jar
+        - "5556"
+        - /etc/jmx-exporter/jmx-prometheus.yml
+        ports:
+        - containerPort: 5556
+        resources:
+          requests:
+            cpu: 0m
+            memory: 60Mi
+          limits:
+            memory: 120Mi
+        volumeMounts:
+        - name: jmx-config
+          mountPath: /etc/jmx-exporter
+      volumes:
+      - name: jmx-config
+        configMap:
+          name: jmx-exporter-config

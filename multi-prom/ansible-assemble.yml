@@ -1,0 +1,8 @@
+- name: Assemble prometheus config
+  assemble:
+    src: "{{ prometheus_config_path }}/fragments"
+    dest: "{{ prometheus_config_path }}/prometheus.yaml"
+    validate: "{{ prometheus_bin_path }}/promtool_{{ prometheus_version }} check config %s"
+    backup: yes
+  notify:
+  - Restart prometheus

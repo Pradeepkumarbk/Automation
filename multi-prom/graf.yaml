@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-hs
+  labels:
+    app: grafana
+spec:
+  ports:
+  - port: 80
+    name: server
+  clusterIP: None
+  selector:
+    app: grafana
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  labels:
+    app: grafana
+spec:
+  type: LoadBalancer
+  selector:
+    statefulset.kubernetes.io/pod-name: grafana-0
+  ports:
+  - port: 80
+    targetPort: 3000
+    name: server
+  selector:
+    app: grafana
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: grafana-pdb
+spec:
+  selector:
+    matchLabels:
+       app: grafana
+  maxUnavailable: 0
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  serviceName: grafana-hs
+  replicas: 1
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - grafana
+              topologyKey: "kubernetes.io/hostname"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+             - weight: 1
+               podAffinityTerm:
+                 labelSelector:
+                   matchExpressions:
+                     - key: "app"
+                       operator: In
+                       values:
+                       - grafana
+                 topologyKey: "kubernetes.io/hostname"
+      terminationGracePeriodSeconds: 300
+      # securityContext:
+      #     runAsUser: 472
+      #     fsGroup: 472
+      containers:
+      - name: grafana
+        imagePullPolicy: Always
+        image: jlldataplatform.azurecr.io/grafana:v1
+        fs:
+          securityContext:
+            fsGroup: 472
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+        ports:
+        - containerPort: 3000
+          name: server
+        env:
+          - name: GF_SERVER_ROOT_URL
+            value: "http://168.61.154.204/grafana/"
+        volumeMounts:
+        # - name: data
+        #   mountPath: /var/lib/grafana
+        - mountPath: /var/lib/grafana/
+          name: datadir
+      # volumes:
+      #   - name: nfs
+      #     persistentVolumeClaim:
+      #       claimName: nfs
+      imagePullSecrets:	
+      - name: jlldataplatform
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  annotations:
+    ingress.kubernetes.io/proxy-body-size: 100m
+    kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+        rewrite ^/grafana/(.*)$ /$1 break;
+spec:
+  rules:
+  - host: dp-devops.jll.com
+    http:
+      paths:
+      - path: /grafana
+        backend:
+          serviceName: grafana-service
+          servicePort: 80

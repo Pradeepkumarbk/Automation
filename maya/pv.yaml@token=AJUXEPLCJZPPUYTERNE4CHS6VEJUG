@@ -1,0 +1,15 @@
+#ext4-gce-ssd-persistentvolume.yaml
+apiVersion: "v1"
+kind: "PersistentVolume"
+metadata:
+  name: es-ssd-pv
+spec:
+  capacity:
+      storage: 200Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: elastic-gpd
+  gcePersistentDisk:
+    fsType: ext4
+    pdName: prod-es-disk

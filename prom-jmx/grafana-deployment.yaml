@@ -1,0 +1,85 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:6.2.4
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        env:
+          - name: GF_SERVER_ROOT_URL
+            value: "http://168.61.154.204/grafana/"
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        # - mountPath: "/etc/grafana"
+        #   name: config-volume
+        - mountPath: /var/lib/grafana
+          name: data
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      # - configMap:
+      #     name: maya-grafana-cfgmap
+      #   name: config-volume
+      - emptyDir: {}
+        name: data
+---
+  apiVersion: extensions/v1beta1
+  kind: Ingress
+  metadata:
+    name: grafana-ingress
+    namespace: test
+    annotations:
+      ingress.kubernetes.io/proxy-body-size: 100m
+      kubernetes.io/tls-acme: "true"
+      kubernetes.io/ingress.class: "nginx"
+      # ingress.kubernetes.io/rewrite-target: /
+      # nginx.ingress.kubernetes.io/rewrite-target: /$1
+      # nginx.ingress.kubernetes.io/rewrite-target: /$1
+      # nginx.ingress.kubernetes.io/rewrite-target: /$2
+      ingress.kubernetes.io/force-ssl-redirect: "true"
+      # nginx.ingress.kubernetes.io/configuration-snippet: |
+      #   rewrite ^/grafana/(.*)$ /$1 break;
+  spec:
+    rules:
+    - host: 
+      http:
+        paths:
+        # - path: /grafana(/|$)(.*)
+        - path: /grafana
+          backend:
+            serviceName: grafana
+            servicePort: 3000
+# #     #   - path: /doc
+# #         backend:
+# #           serviceName: nexus-service
+# #           servicePort: 5000
+---

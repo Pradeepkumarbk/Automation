@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: maya-grafana-cfgmap
+  namespace: test
+data:
+  grafana.ini: |
+    #################################### Server ####################################
+    [server]
+    # The public facing domain name used to access grafana from a browser
+    # domain = 168.61.154.204
+    # If you use reverse proxy and sub path specify full url (with sub path)
+    root_url = http://168.61.154.204
+    serve_from_sub_path = true
+    # [auth-proxy]
+    # enabled = true
+    [paths]
+    data = /var/lib/grafana/data
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+    [analytics]
+    check_for_updates =  true
+    [grafana_net]
+    url =  https://grafana.net
+    
+    
+
+    # server:
+    #     domain: foo.bar
+    #     root_url: https://foo.bar/grafana
+    #     serve_from_sub_path: true
+    #   paths:
+    #     data: /var/lib/grafana/data
+    #     logs: /var/log/grafana
+    #     plugins: /var/lib/grafana/plugins
+    #     provisioning: /etc/grafana/provisioning
+    #   analytics:
+    #     check_for_updates: true
+    #   log:
+    #     mode: console
+    #   grafana_net:
+    #     url: https://grafana.net

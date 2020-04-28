@@ -1,0 +1,161 @@
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nexus-hs
+#   labels:
+#     app: nexus
+# spec:
+#   ports:
+#   - port: 8081
+#     name: server
+#   - port: 5000
+#     name: docker
+#   clusterIP: None
+#   selector:
+#     app: nexus
+# ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-service
+  # annotations:
+      # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  labels:
+    app: nexus
+spec:
+  type: LoadBalancer
+  # loadBalancerIP: 10.42.123.21
+  selector:
+    statefulset.kubernetes.io/pod-name: nexus-0
+  ports:
+  - port: 80
+    targetPort: 8081
+    name: server
+  - port: 443
+    targetPort: 8443
+    name: https
+  - port: 5000
+    targetPort: 5000
+    name: docker
+  selector:
+    app: nexus
+# # ---
+# apiVersion: policy/v1beta1
+# kind: PodDisruptionBudget
+# metadata:
+#   name: nexus-pdb
+# spec:
+#   selector:
+#     matchLabels:
+#        app: nexus
+#   maxUnavailable: 0
+# ---
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: nexus
+# spec:
+#   selector:
+#     matchLabels:
+#       app: nexus
+#   serviceName: nexus-hs
+#   replicas: 1
+#   podManagementPolicy: Parallel
+#   updateStrategy:
+#     type: RollingUpdate
+#   template:
+#     metadata:
+#       labels:
+#         app: nexus
+#     spec:
+#       affinity:
+#         podAntiAffinity:
+#           requiredDuringSchedulingIgnoredDuringExecution:
+#             - labelSelector:
+#                 matchExpressions:
+#                   - key: "app"
+#                     operator: In
+#                     values:
+#                     - nexus
+#               topologyKey: "kubernetes.io/hostname"
+#       affinity:
+#         podAntiAffinity:
+#           preferredDuringSchedulingIgnoredDuringExecution:
+#              - weight: 1
+#                podAffinityTerm:
+#                  labelSelector:
+#                    matchExpressions:
+#                      - key: "app"
+#                        operator: In
+#                        values:
+#                        - nexus
+#                  topologyKey: "kubernetes.io/hostname"
+#       terminationGracePeriodSeconds: 300
+#       containers:
+#       - name: nexus
+#         imagePullPolicy: Always
+#         image: jlldataplatform.azurecr.io/nexus:v5
+#         resources:
+#           limits:
+#             memory: "4Gi"
+#             cpu: "2"
+#           requests:
+#             memory: "2Gi"
+#             cpu: "1"
+#         ports:
+#         - containerPort: 8081
+#           name: server
+#         - containerPort: 5000
+#           name: docker
+#         volumeMounts:
+#         - name: datadir
+#           mountPath: /nexus-data
+#         # - name: nexusdocker
+#         #   mountPath: "/etc/docker/daemon.json"
+#       # volumes:
+#       # - name: nexusdocker
+#       #   hostpath:
+#       #     name: /etc/docker/daemon.json
+#       securityContext:
+#         runAsUser: 1000
+#         runAsGroup: 1000
+#         fsGroup: 1000
+#       imagePullSecrets:
+#       - name: jlldataplatform
+#   volumeClaimTemplates:
+#   - metadata:
+#       name: datadir
+#     spec:
+#       accessModes: [ "ReadWriteOnce" ]
+#       resources:
+#         requests:
+#           storage: 50Gi
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nexus-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+#    kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: "nginx"
+spec: 
+  rules:
+  - host:
+    http:
+      paths:
+      - path: /nexus
+        backend:
+          serviceName: nexus-service
+          servicePort: 80
+  # - host: 
+  #   http:
+  #     paths:
+  #     - path: /nexus
+  #       backend:
+  #         serviceName: nexus-service
+  #         servicePort: 5000
+  # tls:
+  #   - hosts:
+  #     - 10.42.123.21

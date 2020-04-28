@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-daemon
+data:
+  daemon.json: |-
+    {{ "insecure-registries" : [ "nexus-service/nexus" ] }}
