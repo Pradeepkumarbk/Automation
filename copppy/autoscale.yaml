@@ -1,0 +1,78 @@
+# ---
+# apiVersion: autoscaling/v2beta1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: dp-red2-transactions-transactions-app-cpu
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: dp-red2-transactions-transactions-app
+#   minReplicas: 3
+#   maxReplicas: 6
+#   # targetCPUUtilizationPercentage: 50
+#   metrics: 
+#   - type: Resource
+#     resource:
+#       name: cpu 
+#       target:
+#         type: Utilization 
+#         averageValue: 3000m
+# # ---
+# # apiVersion: autoscaling/v2beta1
+# # kind: HorizontalPodAutoscaler
+# # metadata:
+# #   name: dp-red2-transactions-transactions-app-memory
+# # spec:
+# #   scaleTargetRef:
+# #     apiVersion: apps/v1 
+# #     kind: Deployment 
+# #     name: dp-red2-transactions-transactions-app
+# #   minReplicas: 3
+# #   maxReplicas: 6
+# #   metrics: 
+# #   - type: Resource
+# #     resource:
+# #       name: memory 
+# #       # target:
+# #       #   type: Utilization 
+# #       targetAverageValue: 50Mi
+# ---
+# apiVersion: autoscaling/v2beta1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: dp-red2-transactions-transactions-app-memory
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: dp-red2-transactions-transactions-app
+#   minReplicas: 3
+#   maxReplicas: 6
+#   # targetCPUUtilizationPercentage: 50
+#   metrics: 
+#   - type: Resource
+#     resource:
+#       name: memory
+#       target:
+#         type: Utilization 
+#         targetAverageValue: 500Mi
+
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dp-red2-transactions-transactions-app-memory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1 
+    kind: Deployment 
+    name: dp-red2-transactions-transactions-app
+  minReplicas: 3
+  maxReplicas: 6
+  metrics: 
+  - type: Resource
+    resource:
+      name: memory 
+      # target:
+      #   type: Utilization 
+      targetAverageValue: 500Mi

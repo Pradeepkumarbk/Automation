@@ -1,0 +1,19 @@
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: elk
+  name: elasticsearch-master-config
+  labels:
+    app: elasticsearch
+    role: master
+data:
+  elasticsearch.yml: |-
+    xpack.security.enabled: true
+    xpack.monitoring.collection.enabled: true
+    xpack.security.authc:
+      anonymous:
+        username: elastic
+        roles: admin
+        authz_exception: true

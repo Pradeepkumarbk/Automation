@@ -1,0 +1,57 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: fluentd-aggregator
+  namespace: logging
+  labels:
+    k8s-app: fluentd-aggregator
+data:
+  system.conf: |-
+    <system>
+      root_dir /tmp/fluentd-buffers/
+    </system>
+
+  output.conf: |-
+    # Input
+    <source>
+      @type forward
+      port 24224
+    </source>
+    
+    # Output
+    <match **>
+      @id elasticsearch
+      @type elasticsearch
+      @log_level info
+      include_tag_key true
+      # host 23.99.213.104
+      # port 9200
+      # user elastic
+      # password jlldevops
+      scheme https
+      ssl_version TLSv1_2
+      host es.azara.jllt.com
+      port 9200
+      user elastic
+      password QwHlJwvd97Prk8dW9g4m
+      logstash_format true
+      logstash_prefix prod
+      <buffer>
+        @type file
+        path /var/log/fluentd-buffers/kubernetes.system.buffer.aggregator
+        flush_mode interval
+        retry_type exponential_backoff
+        # flush_thread_count 8
+        # flush_interval 1s
+        # retry_forever true
+        # retry_max_interval 30
+        # chunk_limit_size 32M
+        # queue_limit_length 4
+        flush_thread_count 8
+        flush_interval 60s
+        retry_forever
+        retry_max_interval 30   
+        chunk_limit_size 8M
+        queue_limit_length 32
+      </buffer>
+    </match>

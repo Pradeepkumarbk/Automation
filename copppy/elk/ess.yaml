@@ -1,0 +1,45 @@
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: elasticsearch
+#   namespace: elk
+# spec:
+#   selector:
+#     app: elasticsearch
+#   ports:
+#   - protocol: TCP
+#     port: 9200
+#     targetPort: rest
+#   - protocol: TCP
+#     port: 9200
+#     targetPort: inter-node
+    
+kind: Service
+apiVersion: v1
+metadata:
+  name: elasticsearch
+  namespace: elk
+  labels:
+    app: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  type: LoadBalancer
+  ports:
+    - port: 9200
+      name: rest
+    - port: 9300
+      name: inter-node
+# # kind: Service
+# # apiVersion: v1
+# # metadata:
+# #   name: elasticsearch
+# #   namespace: elk
+# # spec:
+# #   selector:
+# #     app: elasticsearch
+# #   ports:
+# #   - protocol: TCP
+# #     port: 9200
+# #     targetPort: db
+

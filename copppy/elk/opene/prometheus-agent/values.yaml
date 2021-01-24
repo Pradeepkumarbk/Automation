@@ -1,0 +1,39 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+namespace: logging
+configFileName: fluentd-aggregator
+appname: fluentd-aggregator
+
+host: 1.2.3.4
+port: 1234
+env: dev
+
+image:
+  repository: jlldataplatform.azurecr.io/fluentd
+  tag: v1
+  pullPolicy: Always
+
+container:
+  unsecureport: 24224
+
+service:
+  name: fluentd-aggregator
+  port: 24224
+
+resources:
+  limits:
+    memory: 1024Mi
+  requests:
+    cpu: 100m
+    memory: 250Mi
+
+fluentdforwarder:
+  name: fluentd-forwarder
+  
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

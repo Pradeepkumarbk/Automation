@@ -1,0 +1,198 @@
+jllamdpred2preprod
+https://jll-am-cosmos-db-89-preprod.documents.azure.com:443/
+zehqsuzfjxCidKUzfdY9IjywqFF3da3MwIcb0csUW3Tozdl90XuINJRQkq1NJo1OorfLFAJrsKiDqquEjo2v0Q==   key
+
+
+
+
+jlldpred2cosmosdbbackup
+cosmosdb-backup-preprod
+Msk7xxNw8L4VV/5m3hgzj7Krl5x9rbkdOTEQpkOC5OFrlOaBmcYaQd5fiWph9qUrb1yMmQ4BMo1yOBp66YFcFw==
+
+
+
+jllamcosmosbkupprod
+cosmosdb-backup-prod
+VvsASi/cW+juw5zYpAW5l3faiUmdk6nEbCcjwWzhFKq2opStgFRuGWzbezvOQqWPdZh0gy1edNyiWdFHEM9bJw==
+
+jllamdpred2preprod
+https://jll-am-cosmos-db-89-preprod.documents.azure.com:443/
+zehqsuzfjxCidKUzfdY9IjywqFF3da3MwIcb0csUW3Tozdl90XuINJRQkq1NJo1OorfLFAJrsKiDqquEjo2v0Q==
+
+
+
+jllamred2dpproduction
+https://jll-am-cosmos-db-85-prod.documents.azure.com:443/
+Nt4e17294egsOUzrZFBjph1XqC0JJq3AxWZSYUZLgc4p9rvelxlshSWCyHzRpcr8Mhx6IKI3jiK0a3x7V6LBaQ==
+
+
+0 */1 * * * *
+
+
+jllamdpred2deve
+https://dpred2uicosmos.documents.azure.com:443/
+NvkybNWgE7oUGbcSGiiXCRnYr5XF0d91NqdlZo0dOwzfzUXOOssaZ4XG2LktFm5VAAV8A5X7lvCPBCmx0Lw1PQ==
+
+
+jlldpred2cosmosdbbackup
+cosmos-test
+Msk7xxNw8L4VV/5m3hgzj7Krl5x9rbkdOTEQpkOC5OFrlOaBmcYaQd5fiWph9qUrb1yMmQ4BMo1yOBp66YFcFw==
+
+
+az cosmosdb show --name dpred2uicosmos --resource-group dp-red2-eastus2-dev-rg
+
+az keyvault secret show --name jllamuireportsprod-key --vault-name jll-am-prod
+az keyvault secret set --name APOLLO-GRAPH-MANAGER-API-KEY --vault-name jll-am-prod --value service:azara-api:wKMJVJ9Njrfc086ellTvVg
+
+
+ui-test(prod)
+
+SUITE_NAME=sanity
+SELENIUM_URL=http://52.165.170.148:4444/wd/hub
+AZURE_STORAGE_ACCOUNT=jllamuireportprod
+CONTAINER_NAME=test-results-container
+REPORT_FOLDER=UIReports
+APP_URL=https://red.jll.com
+TOLERANCE=0.2
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+
+AZURE_STORAGE_KEY=8LwySECy+BbK8sbL4x9rkp8IZDv4vMPNPLzNvLRJKK6JLxZcpmWWdDeWPxcnttCO0zLo3K8ZT7kU2m+/cEnG2g== (prod)
+
+preprod
+
+SUITE_NAME=sanity
+SELENIUM_URL=http://40.122.163.227:4444/wd/hub
+AZURE_STORAGE_ACCOUNT=jllamuireportpreprod
+APP_URL=https://red-preprod.jll.com
+SLACK_WEBHOOK_NON_PROD_URL=https://hooks.slack.com/services/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
+BOOTSTRAP_SERVERS=kafka-0.kf-hs.default.svc.cluster.local:9094\kafka-1.kf-hs.default.svc.cluster.local:9094\kafka-2.kf-hs.default.svc.cluster.local:9094
+SCHEMA_REGISTRY_URL=https://schemaregistry-0.sr.default.svc.cluster.local:443
+SECURITY_PROTOCOL=SASL_SSL
+TOPIC=Alerts
+KAFKA_AZURE_STORAGE_ACCOUNT=jllamdevopspreprod
+API_URL=https://jllamfunui.azurewebsites.net/api/red2
+HEART_BEAT=normal
+
+KAFKA_AZURE_STORAGE_KEY=vI2QwfggK528bt/xdGqFzFwETP79u0IX+ZQT9gBHk4shzOWlUw3BAB+aON5ecmC1gFYtKZpfgpDZFnbnFk0bnw==  (infra-preprod)
+
+KAFKA_SASL_USERNAME=alice (preprod)
+KAFKA_SASL_PASSWORD=alice-secret (preprod)
+AZURE_STORAGE_KEY=fCLmPKVkHMdHBN5XBUDvVa+XX2JCkzJAHWaYEF9Nn9y9hfkBqKkE9BE2F4XWV3LsZ1Jhybs1c+MOp84FyxBmpQ== (preprod)
+PYTHON_API_URL=jllamsnowflakefuncpreprod (preprod)
+PYTHON_API_KEY=Ovc6aJDuOza4ikSruZS9Ut06g5/JdfDlXpdeqJxCB4Hiwgu4hCEhAQ== (preprod)
+
+
+dev
+
+
+SUITE_NAME=sanity
+SELENIUM_URL=http://13.89.236.142:4444/wd/hub
+AZURE_STORAGE_ACCOUNT=jllamuireportdv
+APP_URL=https://red-dev.jll.com
+SLACK_WEBHOOK_NON_PROD_URL=https://hooks.slack.com/services/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
+SECURITY_PROTOCOL=SASL_SSL
+TOPIC=Alerts
+KAFKA_AZURE_STORAGE_ACCOUNT=jllamdevopspreprod
+HEART_BEAT=normal
+
+AZURE_STORAGE_KEY=1cc5sjilKxBWXzLQr/EynrhQ9sXoenbkty4Shs5noFWRkWiFO/Lhn3367I8cXtX7XuQ8hh+gPeJ95rPa5gdiNw== (dv)
+KAFKA_SASL_USERNAME=alice (dv)
+KAFKA_SASL_PASSWORD=alice-secret  (dv)
+PYTHON_API_URL=jllamsnowflakefuncf-30  (dv)
+PYTHON_API_KEY=HeEk4H9OPWD8/b3gxwjwIh6FwP8adH7cQaF/OoGv2UbIc9X9PnVD4Q==  (dv)
+
+KAFKA_AZURE_STORAGE_KEY=8DwAAXXn1+1ii9znqpynZZfmNZDaIqb8f/k5xGu+wZ65RZx0QVC4emYJMDeOePdivwUX4/i2KY7GN45Ks4iiug== (infra-deve)
+
+
+preprod
+
+SELENIUM_URL=http://104.43.199.21:4444/wd/hu
+API_URL=https://jllamfunui.azurewebsites.net/api/red2
+APP_URL=https://red-preprod.jll.com
+REPORT_FOLDER=ApiReports
+CONTAINER_NAME=test-results-container
+AZURE_STORAGE_ACCOUNT=jllamuireportpreprod
+API_SUITE_NAME=smoke
+PASSWORD=$(PASSWORD)
+USER_NAME=$(USER_NAME)
+SLACK_WEBHOOK_NON_PROD_URL=https://hooks.slack.com/services/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
+
+AZURE_STORAGE_KEY=fCLmPKVkHMdHBN5XBUDvVa+XX2JCkzJAHWaYEF9Nn9y9hfkBqKkE9BE2F4XWV3LsZ1Jhybs1c+MOp84FyxBmpQ== (preprod)
+
+prod
+
+
+SELENIUM_URL=http://52.165.170.148:4444/wd/hub
+API_URL=https://dp-red-ui-func-app.azurewebsites.net/api/red2
+APP_URL=https://red-dev.jll.com
+REPORT_FOLDER=ApiReports
+CONTAINER_NAME=test-results-container
+AZURE_STORAGE_ACCOUNT=jllamuireportprod
+API_SUITE_NAME=smoke
+PASSWORD=$(PASSWORD)
+USER_NAME=$(USER_NAME)
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+TENANT_API_URL=https://jllamuifuncprod.azurewebsites.net
+TENANT_API_KEY=$(TENANT_API_KEY_PROD)
+
+AZURE_STORAGE_KEY=8LwySECy+BbK8sbL4x9rkp8IZDv4vMPNPLzNvLRJKK6JLxZcpmWWdDeWPxcnttCO0zLo3K8ZT7kU2m+/cEnG2g== (prod)
+
+
+dev
+
+
+SELENIUM_URL=http://52.165.217.77:4444/wd/hub
+API_URL=https://dp-red-ui-func-app.azurewebsites.net/api/red2
+APP_URL=https://red-dev.jll.com
+REPORT_FOLDER=ApiReports
+CONTAINER_NAME=test-results-container
+AZURE_STORAGE_ACCOUNT=jllamuireportdv
+API_SUITE_NAME=smoke
+PASSWORD=$(PASSWORD)
+USER_NAME=$(USER_NAME)
+SLACK_WEBHOOK_NON_PROD_URL=https://hooks.slack.com/services/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
+
+AZURE_STORAGE_KEY=1cc5sjilKxBWXzLQr/EynrhQ9sXoenbkty4Shs5noFWRkWiFO/Lhn3367I8cXtX7XuQ8hh+gPeJ95rPa5gdiNw== (dv)
+
+
+
+bils
+preprod
+
+AZURE_STORAGE_ACCOUNT=jllamuireportpreprod
+CONTAINER_NAME=test-results-container
+REPORT_FOLDER=AzureApiReports
+API_URL=https://jllamdatafuncpreprod.azurewebsites.net
+API_SUITE_NAME=smoke
+SLACK_WEBHOOK_NON_PROD_URL=https://hooks.slack.com/services/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
+
+API_KEY=G2RKbwa68iUW2plq9v/B7Y592qDSa5mdVbTGugh/krEXTswE9kdxNA== (preprod)
+AZURE_STORAGE_KEY=fCLmPKVkHMdHBN5XBUDvVa+XX2JCkzJAHWaYEF9Nn9y9hfkBqKkE9BE2F4XWV3LsZ1Jhybs1c+MOp84FyxBmpQ== (preprod)
+
+
+prod
+
+
+AZURE_STORAGE_ACCOUNT=jllamuireportprod
+CONTAINER_NAME=test-results-container
+REPORT_FOLDER=AzureApiReports
+API_URL=https://jllamdatafuncfprod.azurewebsites.net
+API_SUITE_NAME=smoke
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+
+API_KEY=YA/Bx1Yd2f7CiWINUrXwHzkAc7LI18jSSYL3dG5LbVVezZqtu0524g== (prod)
+AZURE_STORAGE_KEY=8LwySECy+BbK8sbL4x9rkp8IZDv4vMPNPLzNvLRJKK6JLxZcpmWWdDeWPxcnttCO0zLo3K8ZT7kU2m+/cEnG2g== (prod)
+
+
+dev
+
+
+AZURE_STORAGE_ACCOUNT=jllamuireportdv
+CONTAINER_NAME=test-results-container
+REPORT_FOLDER=AzureApiReports
+API_URL=https://dp-red2-analytics-deploy-dev.azurewebsites.net
+API_SUITE_NAME=smoke
+SLACK_WEBHOOK_NON_PROD_URL=https://hooks.slack.com/services/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
+
+API_KEY=TwtzPTf4lvoyN5Vdzm2G5Qv3QH9etgDJ8gQtBhCWi61yvUsIkAYHgQ== (dv)
+AZURE_STORAGE_KEY=1cc5sjilKxBWXzLQr/EynrhQ9sXoenbkty4Shs5noFWRkWiFO/Lhn3367I8cXtX7XuQ8hh+gPeJ95rPa5gdiNw== (dv)
