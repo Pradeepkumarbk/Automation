@@ -1,0 +1,26 @@
+---
+
+- name: tableau master setups
+  hosts: tableaumaster
+  become: yes
+  become_method: sudo
+  become_user: root
+  roles:
+   - tableaumaster
+
+- name: tableau slave setups
+  hosts: tableauslave
+  become: yes
+  become_method: sudo
+  become_user: root
+  roles:
+   - tableauslave2
+ 
+
+- name: tableau config setups
+  hosts: tableaumaster
+  become: yes
+  become_method: sudo
+  become_user: root
+  roles:
+    - nodeconfig

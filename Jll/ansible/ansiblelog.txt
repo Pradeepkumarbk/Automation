@@ -1,0 +1,276 @@
+
+PLAY [tableau master setups] ***************************************************
+
+TASK [setup] *******************************************************************
+ok: [10.42.121.10]
+
+TASK [tableaumaster : include_vars] ********************************************
+ok: [10.42.121.10]
+
+TASK [tableaumaster : copying script files] ************************************
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/config.json)
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/reg_templ.json)
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/tb)
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/cert.sh)
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/tab-master-server-rhel-install.sh)
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/secrets)
+
+TASK [tableaumaster : Installing tableau server] *******************************
+changed: [10.42.121.10]
+
+TASK [tableaumaster : Creating SSL Directory] **********************************
+changed: [10.42.121.10] => (item=mkdir ssl)
+changed: [10.42.121.10] => (item=chown tableau:tableau ssl)
+
+TASK [tableaumaster : download certs] ******************************************
+changed: [10.42.121.10]
+
+TASK [tableaumaster : changing permissions] ************************************
+changed: [10.42.121.10] => (item=chown -R tableau:tableau ssl)
+changed: [10.42.121.10] => (item=chmod -R 777 ssl)
+
+PLAY [tableau slave setups] ****************************************************
+
+TASK [setup] *******************************************************************
+ok: [10.42.121.12]
+ok: [10.42.121.13]
+
+TASK [tableauslave2 : include_vars] ********************************************
+ok: [10.42.121.12]
+ok: [10.42.121.13]
+
+TASK [tableauslave2 : Creates directory] ***************************************
+changed: [10.42.121.13]
+changed: [10.42.121.12]
+
+TASK [tableauslave2 : downloading tableu package  files] ***********************
+changed: [10.42.121.13]
+changed: [10.42.121.12]
+
+TASK [tableauslave2 : copying script files] ************************************
+changed: [10.42.121.13] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableauslave2/files/bootstrap.sh)
+changed: [10.42.121.12] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableauslave2/files/bootstrap.sh)
+changed: [10.42.121.12] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableauslave2/files/cert.sh)
+changed: [10.42.121.13] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableauslave2/files/cert.sh)
+changed: [10.42.121.12] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableauslave2/files/tab-slave-rh2-server.sh)
+changed: [10.42.121.13] => (item=/root/dp-red2-devops-ansible/ansible/roles/tableauslave2/files/tab-slave-rh2-server.sh)
+
+TASK [tableauslave2 : copying certs file  creation] ****************************
+changed: [10.42.121.13]
+changed: [10.42.121.12]
+
+TASK [tableauslave2 : Installing tableau slave server] *************************
+changed: [10.42.121.13]
+changed: [10.42.121.12]
+
+TASK [tableauslave2 : creating ssl directory] **********************************
+changed: [10.42.121.13] => (item=mkdir ssl)
+changed: [10.42.121.12] => (item=mkdir ssl)
+changed: [10.42.121.13] => (item=chown tableau:tableau ssl)
+changed: [10.42.121.12] => (item=chown tableau:tableau ssl)
+
+TASK [tableauslave2 : copying certs file] **************************************
+changed: [10.42.121.13]
+changed: [10.42.121.12]
+
+PLAY [tableau config setups] ***************************************************
+
+TASK [setup] *******************************************************************
+ok: [10.42.121.10]
+
+TASK [nodeconfig : include_vars] ***********************************************
+ok: [10.42.121.10]
+
+TASK [nodeconfig : copy] *******************************************************
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/nodeconfig/files/lb.json)
+changed: [10.42.121.10] => (item=/root/dp-red2-devops-ansible/ansible/roles/nodeconfig/files/nodeconfig.sh)
+
+TASK [nodeconfig : configuring tableau master and slave server] ****************
+changed: [10.42.121.10]
+
+TASK [nodeconfig : debug] ******************************************************
+ok: [10.42.121.10] => {
+    "result.stdout_lines": [
+        "root", 
+        "Setting 1 count of clustercontroller instances in node2.", 
+        "Setting 1 count of clustercontroller instances in node3.", 
+        "", 
+        "Pending topology set.", 
+        "There are 1 topology validation errors/warnings.", 
+        "There are 3 or more nodes in your cluster, but you have not deployed a", 
+        "Coordination Service ensemble. After applying your changes, see our", 
+        "documentation for information on how to deploy a Coordination Service ensemble.", 
+        "For more information, go to the Tableau Server Help for the OS you have", 
+        "installed on, and search for \"Deploy a Coordination Service Ensemble\"", 
+        "Service: Coordination Service     ", 
+        "", 
+        "", 
+        "", 
+        "There are 1 topology validation errors/warnings.", 
+        "Warning: There are 3 or more nodes in your cluster, but you have not deployed a", 
+        "Coordination Service ensemble. After applying your changes, see our", 
+        "documentation for information on how to deploy a Coordination Service ensemble.", 
+        "For more information, go to the Tableau Server Help for the OS you have", 
+        "installed on, and search for \"Deploy a Coordination Service Ensemble\"", 
+        "Service: Coordination Service     ", 
+        "", 
+        "", 
+        "Ignoring topology validation warnings and proceeding to apply pending changes.", 
+        "Starting deployments asynchronous job.", 
+        "Job id is '2', timeout is 39 minutes.", 
+        "5% - Retrieving the topology to deploy.", 
+        "11% - Retrieving the configuration to deploy.", 
+        "17% - Validating the new topology.", 
+        "23% - Determining if server needs to be started.", 
+        "Running - Disabling all services.", 
+        "                                 ", 
+        "29% - Disabling all services.", 
+        "Running - Waiting for the services to stop.", 
+        "                                           ", 
+        "35% - Waiting for the services to stop.", 
+        "41% - Updating nodes to new topology.", 
+        "Running - Waiting for topology to be applied.", 
+        "                                             ", 
+        "47% - Waiting for topology to be applied.", 
+        "52% - Updating nodes to new configuration.", 
+        "58% - Disabling all services.", 
+        "64% - Waiting for the services to stop.", 
+        "70% - Reconfiguring services.", 
+        "Running - Waiting for services to reconfigure.", 
+        "                                              ", 
+        "76% - Waiting for services to reconfigure.", 
+        "82% - Enabling all services.", 
+        "88% - Waiting for the services to start.", 
+        "94% - Enabling all services.", 
+        "100% - Waiting for the services to start.", 
+        "Successfully deployed nodes with updated configuration and topology version.", 
+        "Stopping service...", 
+        "Job id is '3', timeout is 30 minutes.", 
+        "Service stopped successfully.", 
+        "Deploy a Coordination Service ensemble", 
+        "Deploying Coordination Service ensemble on nodes [node1, node2, node3].", 
+        "Job id is '4', timeout is 45 minutes.", 
+        "25% - Validating that there are no pending changes.", 
+        "Running - Deploying a new Coordination Service ensemble id '1'.", 
+        "                                                               ", 
+        "50% - Deploying a new Coordination Service ensemble id '1'.", 
+        "Running - Importing data into the new Coordination Service ensemble id '1'.", 
+        "                                                                           ", 
+        "75% - Importing data into the new Coordination Service ensemble id '1'.", 
+        "Running - Switching to the new Coordination Service ensemble id '1'.", 
+        "                                                                    ", 
+        "100% - Switching to the new Coordination Service ensemble id '1'.", 
+        "Finished deploying Coordination Service ensemble on nodes [node1, node2, node3]. Wait a few minutes for the Administration Controller and Administration Agent services to restart, then check server status using 'status -v' to confirm they show as 'running'. Use 'topology cleanup-coordination-service' to remove non-production ensemble, or 'toggle-coordination-service' to switch between ensembles.", 
+        "Clean up coordination Service", 
+        "Removing non-production Coordination Service ensemble.", 
+        "Removing non-production Coordination Service ensemble.", 
+        "Job id is '0', timeout is 45 minutes.", 
+        "50% - Validating that there are no pending changes.", 
+        "Running - Removing non-production Coordination Service ensemble id '0'.", 
+        "                                                                       ", 
+        "100% - Removing non-production Coordination Service ensemble id '0'.", 
+        "Finished removing non-production Coordination Service ensemble.", 
+        "Starting service...", 
+        "Job id is '1', timeout is 30 minutes.", 
+        "Service was started successfully.", 
+        "Configure processes for the second node======", 
+        "Setting 1 count of gateway instances in node2.", 
+        "Setting 2 count of vizqlserver instances in node2.", 
+        "Setting 2 count of vizportal instances in node2.", 
+        "Setting 2 count of backgrounder instances in node2.", 
+        "Setting 2 count of cacheserver instances in node2.", 
+        "Setting 1 count of searchserver instances in node2.", 
+        "Setting 2 count of dataserver instances in node2.", 
+        "Setting 1 count of filestore instances in node2.", 
+        "Starting deployments asynchronous job.", 
+        "Job id is '2', timeout is 39 minutes.", 
+        "4% - Retrieving the topology to deploy.", 
+        "Running - Retrieving the configuration to deploy.", 
+        "                                                 ", 
+        "9% - Retrieving the configuration to deploy.", 
+        "13% - Validating the new topology.", 
+        "18% - Determining if server needs to be started.", 
+        "22% - Disabling all services.", 
+        "Running - Waiting for the services to stop.", 
+        "                                           ", 
+        "27% - Waiting for the services to stop.", 
+        "31% - Updating nodes to new topology.", 
+        "Running - Waiting for topology to be applied.", 
+        "                                             ", 
+        "36% - Waiting for topology to be applied.", 
+        "40% - Updating nodes to new configuration.", 
+        "45% - Disabling all services.", 
+        "50% - Waiting for the services to stop.", 
+        "54% - Reconfiguring services.", 
+        "Running - Waiting for services to reconfigure.", 
+        "                                              ", 
+        "59% - Waiting for services to reconfigure.", 
+        "63% - Enabling all services.", 
+        "68% - Waiting for the services to start.", 
+        "Running - Starting search server.", 
+        "                                 ", 
+        "72% - Starting search server.", 
+        "Running - Configuring search server.", 
+        "                                    ", 
+        "77% - Configuring search server.", 
+        "Running - Enabling the services required for indexing.", 
+        "                                                      ", 
+        "81% - Enabling the services required for indexing.", 
+        "86% - Connecting to Vizportal Maintenance.", 
+        "Running - Rebuilding the search index.", 
+        "                                      ", 
+        "90% - Rebuilding the search index.", 
+        "95% - Enabling all services.", 
+        "100% - Waiting for the services to start.", 
+        "Successfully deployed nodes with updated configuration and topology version.", 
+        "Configure processes for the third node", 
+        "Setting 1 count of gateway instances in node3.", 
+        "Setting 1 count of searchserver instances in node3.", 
+        "Setting 1 count of filestore instances in node3.", 
+        "Setting 1 count of pgsql instances in node2.", 
+        "Completed successfully. Run 'tsm pending-changes apply' to apply the new configuration.", 
+        "Starting deployments asynchronous job.", 
+        "Job id is '3', timeout is 39 minutes.", 
+        "5% - Retrieving the topology to deploy.", 
+        "Running - Retrieving the configuration to deploy.", 
+        "                                                 ", 
+        "10% - Retrieving the configuration to deploy.", 
+        "15% - Validating the new topology.", 
+        "21% - Determining if server needs to be started.", 
+        "26% - Disabling all services.", 
+        "Running - Waiting for the services to stop.", 
+        "                                           ", 
+        "31% - Waiting for the services to stop.", 
+        "36% - Updating nodes to new topology.", 
+        "Running - Waiting for topology to be applied.", 
+        "                                             ", 
+        "42% - Waiting for topology to be applied.", 
+        "47% - Updating nodes to new configuration.", 
+        "52% - Disabling all services.", 
+        "57% - Waiting for the services to stop.", 
+        "63% - Reconfiguring services.", 
+        "Running - Waiting for services to reconfigure.", 
+        "                                              ", 
+        "68% - Waiting for services to reconfigure.", 
+        "73% - Enabling all services.", 
+        "78% - Waiting for the services to start.", 
+        "Running - Starting search server.", 
+        "                                 ", 
+        "84% - Starting search server.", 
+        "Running - Configuring search server.", 
+        "                                    ", 
+        "89% - Configuring search server.", 
+        "94% - Enabling all services.", 
+        "100% - Waiting for the services to start.", 
+        "Successfully deployed nodes with updated configuration and topology version.", 
+        "Starting service...", 
+        "Job id is '4', timeout is 30 minutes.", 
+        "Service was started successfully."
+    ]
+}
+
+PLAY RECAP *********************************************************************
+10.42.121.10               : ok=12   changed=7    unreachable=0    failed=0   
+10.42.121.12               : ok=9    changed=7    unreachable=0    failed=0   
+10.42.121.13               : ok=9    changed=7    unreachable=0    failed=0   
+

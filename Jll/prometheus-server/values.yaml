@@ -1,0 +1,28 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+namespace: default
+configFileName: prometheus-server-config
+appname: prometheus
+
+image:
+  repository: jlldataplatform.azurecr.io/prometheus
+  tag: v1
+  pullPolicy: Always
+
+container:
+  unsecureport: 9090
+
+envIP:
+  sandbox: 1.2.3.5
+  dev: 1.2.3.5
+  preprod: 1.2.3.5
+  prod: 1.2.3.5
+  sales: 1.2.3.5
+  
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

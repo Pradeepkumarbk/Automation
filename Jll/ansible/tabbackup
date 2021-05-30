@@ -1,0 +1,24 @@
+#!/bin/bash
+whoami
+yum update -y
+yum install expect -y
+yum install tableau-server-2019-2-0.x86_64.rpm -y
+cp bootstrap.json /opt/tableau/tableau_server/packages/scripts.20192.19.0518.0639/
+cd /opt/tableau/tableau_server/packages/scripts.20192.19.0518.0639/
+
+
+/usr/bin/expect <<EOF
+
+spawn ./initialize-tsm -b bootstrap.json -u provisioner -f --accepteula
+expect {
+"*(provisioner):" {send "Provisioner@123\r";exp_continue }
+sleep 5
+}
+EOF
+
+systemctl start firewalld
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=172.16.2.9/32 port port=80 protocol=tcp accept'
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=172.16.2.11/32 port port=80 protocol=tcp accept'
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=172.16.2.9/32 port port=8000-9000 protocol=tcp accept'
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=172.16.2.11/32 port port=8000-9000 protocol=tcp accept'
+firewall-cmd --reload

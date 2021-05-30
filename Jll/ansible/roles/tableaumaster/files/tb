@@ -1,0 +1,368 @@
+#!/bin/bash
+
+set -o nounset # exit script if trying to use an uninitialized variable
+set -o errexit # exit the script if any statement returns a non-true return value
+
+#Setting up the default value if not set.
+: "${license:=" "}"
+: "${usermatch:=tab}"
+: "${registration_file_name:=reg_templ.json}"
+: "${repo_url_name:=https://downloads.tableau.com/esdalt/2019.2.0/tableau-server-2019-2-0.x86_64.rpm}"
+
+#WORKING_DIR,check dir "tableau_server" existing in $HOME location, if not create
+check_dir_exist() {
+    working_dir=$(pwd)
+    echo "Working dir:" $working_dir
+    pwd_content=$(ls $working_dir | wc -l)
+    echo "pwd_no_items:"$pwd_content
+    if [[ $pwd_content -lt 1 ]]; then
+      #statements
+      echo " Exiting from check_dir_exist(), didn't find the supporting files."
+      exit 2
+    fi
+}
+
+#Download specified package or set to default.
+download_package() {
+    if [ ! -z "$1" ]; then
+        echo "repo_url_name:$1"
+        repo_url_download "$1"
+    else
+        repo_url_download
+    fi
+}
+
+#Check current user is a part of the tsmadmin group
+check_user_exists_in_tsmadmin() {
+  local user_exists=$(grep $current_user /etc/group | cut -d ':' -f1 | grep tsmadmin)
+    if [ "$user_exists" == " " ]; then
+        echo "Adding user to tsmadmin group."
+        usermod -G tsmadmin -a $current_user
+        echo "adding user is done."
+    fi
+    curl -k https://ipinfo.io
+    if [ $? -eq 1 ]; then
+        echo "License Server not available, check internet connectivity. \
+        or visit https://onlinehelp.tableau.com/current/server-linux/en-us/activate_off.htm for offline activation manually."
+        exit 3
+    elif [ "${trial}" == "true" ]; then
+        #activate_license
+        activate_license ${trial}
+    else 
+        echo activating licence $license
+        activate_license ${license}
+    fi
+
+}
+
+#activate a two-week trial with -t falg and production grade License with -k tsm licenses activate -k <product key>
+activate_license() {
+  if [ ! -z "$1" ]; then
+    if [ "$trial" == "$1" ]; then
+      tsm licenses activate -t
+      register_tab_server ${registration_file_name}
+
+    elif [ "$license" == "$1" ]; then
+      tsm licenses activate -k "$1"
+      tsm licenses activate -k $licenseuser
+      register_tab_server ${registration_file_name}
+    else
+      show_help
+    fi
+  fi
+}
+
+#populate secret credentials from the file secret.
+secret_credential() {
+    echo "Secret filename:"${1}
+    tsm_admin_password=$(grep tsm_admin_password ${working_dir}/${1} | cut -d '=' -f 2)
+    tab_admin_password=$(grep tab_admin_password ${working_dir}/${1} | cut -d '=' -f 2)
+    echo "${tsm_admin_password}"
+    echo "${tab_admin_password}"
+}
+
+option_init() {
+  #option sets:
+  OPTIND=1 # Reset for getopts (-: to allow long options)
+  while getopts "u:p:i:t:k:-:" opt; do
+    case "$opt" in
+      u)
+        clientid=$OPTARG
+        ;;
+      p)
+        password=$OPTARG
+        ;;
+      i)
+        tenantid=$OPTARG
+        ;;
+      k)
+        license="${OPTARG}"
+        ;;
+      l)
+        licenseuser="${OPTARG}"
+        ;;
+      t)
+        trial="$OPTARG";
+        ;;
+      -) # handle long options
+        local args
+        #using = for collecting value as key=value.
+        IFS="=" read -r -a args <<< "${OPTARG}"
+        case "${args[0]}" in
+          regfile_dont_use)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              registration_file_name_not_tobe_used="${args[1]}"
+          ;;
+          regfile)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              registration_file_name="${args[1]}"
+          ;;
+          repo_url)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              repo_url_name="${args[1]}"
+          ;;
+          identity_config_file)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              identity_config_file="${args[1]}"
+          ;;
+          user)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              user_name="${args[1]}"
+              echo "user_name:${user_name}"
+          ;;
+          driver_url)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              driver_url="${args[1]}"
+              echo "user_name:${user_name}"
+          ;;
+          secret)
+              if [ ${#args[@]} -ne 2 ]; then
+                error_with_no_value_specified "${args[0]}"
+                exit 2
+              fi
+              secret="${args[1]}"
+              echo "secret_file_name:${secret}"
+          ;;
+          *)
+            echo "---"
+            echo "Unknown or malformed command line option: '--'"
+            echo "---"
+            show_help
+            exit 2
+            ;;
+        esac
+        ;;
+      ?)
+        echo "==="
+        echo "Unknown or malformed command line option: '-'"
+        echo "==="
+        show_help
+        exit 2
+    ;;
+    esac
+  done
+shift "$((OPTIND-1))"
+
+}
+
+repo_url_download() {
+  echo "inside repo_url_download()"
+  #Download release page:
+  if [ ! -z "$1" ]; then
+      cd ${working_dir}
+      echo "Start download.."
+      #wget "$1" -O ${working_dir}/tableau_server_install_package.deb
+      wget "$1" 
+      echo "Wget operation succeded: $?"
+  fi
+
+}
+register_tab_server() {
+  #registering the tab sever
+  local match=$(ls | grep -w ${1})
+  if [ "${match}" != " " ]; then
+      cat ${1}
+      tsm register --file ${working_dir}/${1}
+      identity_store_setting ${identity_config_file}
+  else
+      show_help
+  fi
+
+}
+
+identity_store_setting() {
+  echo "Initiating local identity store."
+  tsm settings import -f ${working_dir}/${1}
+  echo "Done with local identity store."
+  echo "Finalizing installation and Configuration"
+  hostname=$(hostname)
+  hostfile="/etc/hosts"
+  echo "127.0.0.1 localhost ${hostname}" >> ${hostfile}
+  echo "=================="
+  cat ${hostfile}
+  echo "=================="
+  final_setup
+  echo "Final setup done."
+}
+
+final_setup() {
+
+  echo "=================="
+  tsm pending-changes apply
+  echo "=================="
+  tsm initialize --start-server --request-timeout 1800
+  echo "=================="
+  #read -s -p "Enter password for TABADMIN administartion: " password
+  #tabcmd initialuser --server 'localhost:80' --username 'admin' --password "${password}"
+  tabcmd initialuser --server 'localhost:80' --username 'admin' --password "${tab_admin_password}"
+  echo "=================="
+
+  install_drivers ${driver_url}
+
+}
+
+install_drivers() {
+
+  echo "installing drivers.."
+  c=$(echo $1 | cut -d . -f 7)
+  if [[ "$c" == "rpm" ]]; then
+    wget ${1} -P ${working_dir}
+    #yum install ${1} 
+    yum install tableau-postgresql-odbc-09.06.0500-1.x86_64.rpm -y
+    wget https://sfc-repo.snowflakecomputing.com/odbc/linux/2.19.10/snowflake-odbc-2.19.10.x86_64.rpm
+    yum install snowflake-odbc-2.19.10.x86_64.rpm -y
+    wget https://downloads.tableau.com/drivers/linux/yum/tableau-driver/tableau-freetds-1.00.40-1.x86_64.rpm
+    yum install tableau-freetds-1.00.40-1.x86_64.rpm -y
+    echo "RPM check"
+  elif [[ "$c" == "deb" ]]; then
+    wget ${1} -P ${working_dir}
+    gdebi -n tableau-freetds_1.00.40_amd64.deb
+    echo "DEB check"
+  else
+    echo "Neither deb nor rpm package supplied.."
+
+  fi
+}
+error_with_no_value_specified() {
+  errcho "Command line option: '--${1}' must have an assigned value, if specified."
+  show_help
+}
+
+show_help() {
+
+  cat <<EOM
+
+  Always put all the config retated files to {pwd}/tableau_server directory, or script will create tableau_server directory in current directory.
+  Internet connectivity is mandatory.
+
+  Mandatory:
+
+  OPTIONS:
+
+  For trial version.
+  Usage: $(basename "$0") -t
+
+  OR
+
+  For production version.
+  Usage: $(basename "$0") -k <license_key>
+
+  --regfile=<registration_file_name>.json
+  --identity-config-file=<identity-config-file>.json
+  --repo_url=<repo_url_name>.json
+
+  tab1:zxcvbnm1@
+  ./tab-server-install.sh -t --regfile=reg_templ.json --identity_config_file=config.json --user=tabtab --driver_url=https://downloads.tableau.com/drivers/linux/deb/tableau-driver/tableau-freetds_1.00.40_amd64.deb --secret=secrets
+
+EOM
+}
+
+create_user() {
+    echo "inside create_user()"
+    echo "${1}"
+    local passloc="/etc/passwd"
+    #usermatch=$(awk -F: '{ print $1}' $passloc | grep -w ${1})
+    usermatch=`grep -w ${1} $passloc | cut -d: -f1`
+    echo "usermatch=${usermatch}"
+    if [ -z "${usermatch}" ]; then
+        echo "creating passed user for tsmadmin group."
+        #un-comment this line to disable the ask password, and set it later using passwd ${1} in the server through ssh.
+        adduser --disabled-password --gecos " " ${1}
+        #adduser ${1}
+        echo "${1} created successfully with exit code: $?"
+        current_user=${1}
+    else
+        current_user=${user_name}
+        echo "current_user:${current_user}"
+    fi
+
+}
+
+azcli()
+{
+    rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
+    yum install azure-cli -y
+    az login --service-principal --username $clientid --password $password --tenant $tenantid 1> /dev/null
+}
+
+finish() {
+  echo "installation and configuration is done.."
+}
+
+main() {
+yum update -y
+wget http://mirror.centos.org/centos/7/os/x86_64/Packages/libcap-2.22-9.el7.i686.rpm
+yum install libcap-2.22-9.el7.i686.rpm -y
+option_init "$@"
+azcli
+export TERM="linux"
+check_dir_exist
+cd $working_dir
+echo "$working_dir"
+echo "$UID"
+echo "repo_url_name:$repo_url_name"
+secret_credential $secret
+download_package $repo_url_name
+create_user "${user_name}"
+# Install Tableau server
+yum install ${working_dir}/tableau-server-2019-2-0.x86_64.rpm -y
+#CHECK for the $LANG, whether it's C_UTF-8 or en_UTF-8.
+#Initialize TSM
+#TODO: extracting version code so that multiple variation of the tableau server can run in parallel.
+echo "======"
+echo "current_user:$current_user"
+echo "======"
+/opt/tableau/tableau_server/packages/scripts.20192.19.0518.0639/initialize-tsm --accepteula -f -a $current_user
+#bringing updated path into the current session. without having to go log off and login again. tsm command will work now. in fact all the commands in
+#/opt/tableau/tableau_server/packages/scripts.20192.19.0518.0639/* will be availbale to work with.
+source /etc/profile.d/tableau_server.sh
+echo $license
+check_user_exists_in_tsmadmin
+tsm topology nodes get-bootstrap-file --file bootstrap.json
+az storage blob upload -c tableau  --account-name  dpred2devopsmanage -f bootstrap.json -n bootstrap.json
+finish
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl mask --now firewalld
+
+}
+main "$@"

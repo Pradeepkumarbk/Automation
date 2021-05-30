@@ -1,0 +1,92 @@
+---
+users:
+    - {
+    state: present,
+    username: sujith, 
+    group: devops,
+    comment: "sujith kumar",
+    uid: 2001,
+    shell: /bin/bash,
+    password: "$6$rA.gbhfg1JXtnw1R$gG1selkObnFHd7uOovBpQrAD8gSUxzEGFgt3fFPZEjzlKmVeOtuNynwqgvObdIIdlNwA1ZhpiEYhCzn3hv3OQ0",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDIhJqWD7yNP/Qh4op60HsQL53Pf5Rqh80ygOFR2sXDENGaHHzOUbPipxN4glEWlTQvglDqWAgGQPd1fBl0inf+C/sBjzjM9QuA1YHBr13r/1LSs/Dk/mroRRj36/aB31VV+VQ8mmxOHnBKAZfOLGbi338ZYfJ8sbGXYQ4Jx46K1BvtUjaW1L/u0Ep1WY8NlWblKRf0xQaKvsNNJN9MfsgRCljiasNQSheQAPwtr+8i2VWPWXSLP5ws6O0fF/XRrcwN92PP4Zy15WB69yqMXklM/TyujPHpnuIvisBHwtVEOPKOeJ+IP+O4smtMRarzfrv90izvcOj9uOqtbcj7eK9J sujithkumar.nk@vendor4minsmbp3"
+  }
+    - {
+    state: present,
+    username: sunil,
+    group: developers,
+    comment: "sunil sagar",
+    uid: 2002,
+    shell: /bin/bash,
+    password: "$6$7DmtMvqNYeasyvvx$HqXAHwu5k71KxYlx4XhBclBab9D.JcNZ8TQEVYuQ/gqFvhdXNHZwcOm9DhI6Xp3AsIJlOgXC3vEttjdc4/2xC.",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1o+2cE6GUUyjCJZIQ35iwdG4+P+vdMta3fy7Ixss+AiWzqMTk0c5Pn1FYHfEig70Rlbilb2lDszI4tWqmcTn7upZmZW5Tgblib6RKeqInL4zto9rtk6xU2AHsxZUrQ7gIyFquKxC3u3ZeGjXu6dWHaMbhIxetsAGjbv24kaqAY0hZdHB65AUfJmx2Wg02cmgwtbR8CRpYCHngPIn2YmjJv/fSViRKZ2IhupSh1mgZoxXUZJXtj4Yqdagh6rAHu/Nyy2pqBb4nUWid2EN6/kUgLtWSHGx7HI043j3r6QgufC6lbxKvfHpZNkcB+PSKX5O9tz1WV07EN+mIMA+HEuyf sunil.saggar@vendor4-admins-MacBook-Pro-4.local"
+  }
+    - {
+    state: present,
+    username: pradeep,
+    group: devops,
+    comment: "pradeep kumar",
+    uid: 2003,
+    shell: /bin/bash,
+    password: "$6$Pvrli2Ey/WptxAHU$2hoMM6Ra8nRAn0Uqv29kbSQBZDbGkA2VK.e64/yvWC.P/xb1byPIzgM.SMTr0KlZbGye1hkne7RHPOGMfdfWZ0",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDR3SsIeKNP/ENlZh1/CNNyDKB1/o6mJyIqUkP6BPpmCUX8UDbn5hQkie2AReFX2mBBUjFMQY893npwjSFxdxkLKw0QdYGxQrGFM2+ycxpQc0KYmJEHNiAvs6bENr/0Yoql/5dOzPEWncCiQO3+fyxtkNKNWvOcrAQqhfAVPmR7R+VZFK0eiGfhji9XXyFN8dkkzpPoqxoSujjpAAYb31UKtQlHrw8VfaC2ek3J0En13SYM3Cqj9CRTFBP0H284yZ/OYVSb1aiITFonAsEoikO6jW3J0SbQyR5ccpwv9rrnWHy6J3kviXiD8lLvudKK8IgHNS0AsrPow8t0Vl+E1ror pradeep@bastion-eastus2-dev"
+  }
+    - {
+    state: present,
+    username: rahul,
+    group: developers,
+    comment: "rahul kumar",
+    uid: 2004,
+    shell: /bin/bash,
+    password: "$6$ttdG1xLdPuyfnhsN$Qpj4umDnEhIOLVlxmAx9cNAe0n6yimeGIndP1fkJYvlfiJkvE/y8HwixgEH.CFxlE/CR1mwhXg0MqO.KB2HCp1",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCiM6SzoNPjK56QGyp2DaHLiCcclls9T8Ec/BZguQY3/iCjc3yDI2Qr/0FyUI9A10ed9UHeFMLNq4vbE3Zk38MD6Jl2aettimb2MmQOpqZGI2Avq9xzQ3R3CkjIY2H9xDFlPJgwF2WEQwegb6lkv2jff1xBpNPZktEv6AL1vNs+zv9kniXQv52qOiGHbJbx2v/x4b82/LZW2kcngEu4Ci+/hKL0fi41ydRxEym+DqzHDTrrQ7C9mLjWDocFMdLoHG2LoNlPp9dFZU2H87LwParo1FV0x/8saMZmemKF4ralUcWE4Se3kkY68HCdTnwt3lbQYnXDmp5ah/89JAZMG/i7 rahulkumar.dhamu@vendor4-admins-MacBook-Pro-3.local"
+  }
+    - {
+    state: present,
+    username: mohit,
+    group: developers,
+    comment: "mohit singh",
+    uid: 2005,
+    shell: /bin/bash,
+    password: "$6$pPoYIBFqe2sU5o2B$B15G7IRHEKLlVTaQlr5ib1Ikx.awNhfWaNO1lNn5r./rGuVE1M6vwq.qI8r0WIcu3a4nHHF2qhyEzwEFlROmU1",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBlHfDEVvYnfWVh3GSQFUf2cGEgMIJfww0m6T+jqEv8y2ZnpbEdwOj39NV/eZ5B1sDlsNtm22XIJDPa5CSYwBWxmrLj4DMnkbyh19Nuhvdabajk6SqQLpYjROUTtry/uLbKFqytlEyd9zXciFas2nt337s9uAxgF6Dn5tI/HEuQ16JLG4+Y0utOUmLRwpxAHWS5wSYjCtxLykHWZatd4sC7jfaeLW9RL/maSEJwhN3qabe03wst2ZMK37BG2H+WLeLKz5znQoukclgXqjCgqoO1PBHijCmtxtkj/6DlLXE9yguXEUVxxvKNrvFBH9LATVzMDz1Wtn/Tpp2d1Vf76WV Mohit.Asingh@INBLR03MACL016s-MacBook-Pro.local"
+  }
+    - {
+    state: present,
+    username: pavan,
+    group: qa,
+    comment: "pavan vijayrao",
+    uid: 2006,
+    shell: /bin/bash,
+    password: "$6$ejPlNXtn3i1UIuSs$9Z/CmIa764FwphF42PLU4FCLwELXSum3yqeLOvTvB4baoF1mU6GgKIIUQdHU9Z2M/FkRb17M8/JjZVghwCfnb/",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDhMgpdts4s1mGyrJMEO6Qbt1+lnTWyniaimhZAceIevSj28W/EQlSHIrMExKGiNy0qBwcxM8jmHk+oqS8e2gctv5HTIrNkO0ovq3Ua6BrI08zwfsxzptnzua1Sv+Tw2CuidHtHNiHr7BaZX/Pi5ImQ8rgaHxcA5yEjnvzWt0GmdOMAe8Tv2UiECwWNt+8QcXrTaB7e0secChIHa4urH6c6JXxgbff6RQlE/Yoxx1mPFPR2eRyfhZzce1ep2V0P5x5mrW8YZt1oTD99M88mx+I5M1M8wUk1WGJyq3+q1/Q5mj0+z2C0++sjaH+t5vSpwBXTpWHFl3ZdsqcoKKR89QBB pavan.vijayrao@vendor4-admins-MacBook-Pro-5.local"
+  }
+    - {
+    state: present,
+    username: sreejith,
+    group: qa,
+    comment: "rajgopal sreejith",
+    uid: 2007,
+    shell: /bin/bash,
+    password: "$6$1NujeVAbn2IdRUI6$g2h0tc/b6SWYzVCj/kCzEuSSPNiMZX32XTKAnkdOajmI592cBsa17I8.NC5e5pBqh0xDiiVX6tvw8Ii9fY2Od0",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCZ2lWSBUvhZV0HltAFthvqDeRwjxAOc4JAA/9X3k/3eH9U4dpN6o1qkxHcy/IaWzbUwrzDB0PLr0K9vxHOAqChrYdQrf57WFP44JyOOzSuOuOp+Phbm9XSVY0nYhpAk/NGM3RrJlF9q4o/fMBNkhpgOFMgUugHa/epwWS8mMx9c1rVmUt6+QOgFKizRdavtRldqoA/bKwr4mUlJBoS519HBCY1MdZYMa5AkTXDZ8PCEkBKrqYux94I6+YqRKD+Q0xguy5ZUNl3OYoPDW75q8X3v9uZZNN4Y/UKG2/sZgIPW4RLFrw5FW+Euqyy5AgrmXBJzmyvOe87SHB8BSMlAHLR sreejith.rajgopal@INBLR03MACL015s-MacBook-Pro.local"
+  }
+    - {
+    state: present,
+    username: anamika,
+    group: developers,
+    comment: "anamika joshi",
+    uid: 2008,
+    shell: /bin/bash,
+    password: "$6$gzHbbA0rlicKD8vF$juGbHAOOx7hfpF3gdyZpWRLL8/NMJN5V0PIjItJZHRvB/siiVsBkJfpV37m2esvome.PMyKgqgTns7ceh2hRX/",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGwlBnPtzfLnOv93FE5frUYs9YxBreK4D6PhMmNe0kNq1DJ0JicDvrHE8dkuHfTX39GM4gjfCEIOFP3x9y8gvcTnfAX9FSq2cVDhRakq7/Bba+s2ky/uPY/8GzadBBRxyt/WnmYl9AJpqi3HP/O+pWo7yYoSHONlALS444e2YcqazmKktuLj/eEOK9YMtE7oiKkH/g36Mjl0fQPLhYi2Stx+UyXiqKVGxcA5uu1glZwMxdcKaHqEDIjH+wZxMKYyBTw5thQqmowLLg5XzjUhen5RTXp/YofE/RUOv8xlzcW8i4rhEokkW0fKGk+QroJ16aWAgQ75ifL8Wl2qRIovxF ap\anamika.joshi@INBLR03L174"
+  }
+    - {
+    state: present,
+    username: abhinya,
+    group: developers,
+    comment: "abhinya shukla",
+    uid: 2009,
+    shell: /bin/bash,
+    password: "$6$XE.GRIhwk5jqSfA7$OlIcwrZFl3TgV3/Sfr2NbbFgA8vs0W5DA6Q0PGWUFyUdoKEuoAguuT0lXwOJWlIUZLwRqPA0/iFNe2h3YfI0F/",
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0pmHBVKrYjP9wV3icKqqLP3HRXhEpxgRjdrCs/Wo5UOTV6toD+zz3Fef/5whItJNThTHPZ2Q26iIfUf8eKU18crBsBNMKjfFz/tADi5pdnF7HmoVGhon3XpCdsqO9qQ5cS6Kf+ctcFLxYVydYIiyZ3bMZ8P9HjQWgj4F1Z9+hkdHCfauakwDp5dLHmsftokTMBqgT4FqgsevJEWGR6sComIpSD4RhnGHRJP0awTV12uVnuy0YuaR5/0d/5s7Ebil1eb5EUyGWrtnLTaIbzD9XN7H/GQEpYrzdMYAgA9DlvK0dzrNFRH3ovpoZzcJw/rkAx90GcjM8d65F+D6Xp//7 ap\abhinya.shukla@INBLR03L183"
+  }

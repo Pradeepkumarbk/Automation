@@ -1,0 +1,9 @@
+{
+ "configKeys": {
+    "gateway.public.host": "red-reports-preprod.jll.com",
+    "gateway.public.port": "443",
+    "gateway.trusted": "40.86.74.234",
+    "gateway.trusted_hosts": "dp-red2-preprod-tableau.centralus.cloudapp.azure.com,red-reports-preprod.jll.com"
+    }
+}
+

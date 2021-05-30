@@ -1,0 +1,200 @@
+ 
+
+Installation of Fluent-d on Kubernetes Cluster.
+
+Create/Add a task in Azure devops in their respective Platform setup environment job similar to Helm upgrade EFK https://dev.azure.com/dp-red2-org-devops/RED2JLLDevOpsProject/_apps/hub/ms.vss-releaseManagement-web.cd-workflow-hub?definitionId=166&_a=definition-tasks&environmentId=651
+
+Update the task with cluster details.
+
+Update the env parameter accordingly with the environment name for ex: env=dev .
+
+Once done save the changes create a release and deploy the job.
+
+After the deployment is successful you can verify if fluent-d is installed in the cluster by running Kubectl get pods -n logging(You should see fluent-d pods created and running.)
+
+ 
+
+Installation of TD-agent on Nifi Vm
+
+
+Login to respective vms i.e Nifi or Tableau.
+
+Login via bastion pod of respective environment cluster i.e
+
+Kubectl exec -it bastion-0 – /bin/bash
+
+ssh -l provisioner@IP
+
+Login via Bastion vm of that subscription if present.
+
+Once logged in run the following in NIFI vm.
+
+
+sudo -i
+wget http://packages.treasuredata.com.s3.amazonaws.com/2.5/redhat/7/x86_64/td-agent-2.5.0-0.el7.x86_64.rpm
+yum install td-agent-2.5.0-0.el7.x86_64.rpm
+/usr/sbin/td-agent-gem install fluent-plugin-secure-forward
+/usr/sbin/td-agent-gem install fluent-plugin-elasticsearch
+yum install gcc gcc-c++ ruby-devel
+/usr/sbin/td-agent-gem install fluent-plugin-elasticsearch
+usermod -aG root td-agent
+chmod 755 /opt/nifiserver/nifi-1.13.0/logs/nifi-app.log
+chmod 755 /var/log/messages
+chmod 755 /var/log/secure
+3. Create a config file and paste the following code by running (vi /etc/td-agent/td-agent.conf)
+
+
+<source>
+  @type tail
+  path  /opt/nifiserver/nifi-1.13.0/logs/nifi-app.log,/var/log/messages,/var/log/secure
+  tag hostname.system
+  <parse>
+    @type none
+  </parse>
+</source>
+<match kubernetes.var.log.containers.**fluentd**.log>
+      @type null
+</match>
+<match **>
+  @type copy
+  deep_copy true
+  <store>
+    @type stdout
+  </store>
+  <store>
+    @type elasticsearch
+    host es.azara.jllt.com
+    port 9200
+    scheme https
+    user elastic
+    password QwHlJwvd97Prk8dW9g4m
+    logstash_format true
+    logstash_prefix nifi-env(provide env name ex:dev,prod etc)
+    <buffer>
+      flush_mode interval
+      retry_type exponential_backoff
+      flush_thread_count 8
+      flush_interval 60s
+      retry_forever
+      retry_max_interval 30
+      chunk_limit_size 8M
+      queue_limit_length 32
+    </buffer>
+  </store>
+</match>
+4. Save and start the td-agent service systemctl start td-agent.service
+
+5. Create a file and paste the blow code to clear the td-agent logs by running (vi /opt/tdagent.sh) 
+
+
+#!/usr/bin/env bash
+>/var/log/td-agent/td-agent.log
+6. Provide the required permissions to the above directory and create a crontab for the same to run every min. 
+
+
+chmod 755 /opt/tdagent.sh
+crontab -e 
+*/1 * * * * sh /opt/tdagent.sh
+ 
+
+Installation of TD-agent on Tableau Vm
+
+Login to respective vms i.e Nifi or Tableau.
+
+Login via bastion pod of respective environment cluster i.e
+
+Kubectl exec -it bastion-0 – /bin/bash
+
+ssh -l provisioner@IP
+
+Login via Bastion vm of that subscription if present.
+
+Once logged in run the following in Tableau vm.
+
+
+sudo -i
+wget http://packages.treasuredata.com.s3.amazonaws.com/2.5/redhat/7/x86_64/td-agent-2.5.0-0.el7.x86_64.rpm
+yum install td-agent-2.5.0-0.el7.x86_64.rpm
+/usr/sbin/td-agent-gem install fluent-plugin-secure-forward
+/usr/sbin/td-agent-gem install fluent-plugin-elasticsearch
+yum install gcc gcc-c++ ruby-devel
+/usr/sbin/td-agent-gem install fluent-plugin-elasticsearch
+vi /etc/td-agent/td-agent.conf
+usermod -a -G tableau td-agent
+usermod -a -G root td-agent
+chmod 755 /var/log/messages
+chmod 755 /var/log/secure
+3.Create a config file and paste the following code by running (vi /etc/td-agent/td-agent.conf)
+
+
+<source>
+  @type tail
+  path /var/opt/tableau/tableau_server/data/tabsvc/logs/*/*.log,/var/log/secure,/var/log/messages
+  exclude_path /var/opt/tableau/tableau_server/data/tabsvc/logs/*/*.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].log
+  path_key tailed_path
+  time_format %Y-%m-%dT%H:%M:%S.%NZ
+  tag hostname.system
+  <parse>
+    @type none
+  </parse>
+</source>
+  <match kubernetes.var.log.containers.**fluentd**.log>
+        @type null
+  </match>
+<match **>
+  @type copy
+  deep_copy true
+  <store>
+    @type stdout
+  </store>
+  <store>
+    @type elasticsearch
+    host es.azara.jllt.com
+    port 9200
+    scheme https
+    user elastic
+    password QwHlJwvd97Prk8dW9g4m
+    logstash_format true
+    logstash_prefix Tableau-env-1(provide env name ex:dev,pod etc)
+    <buffer>
+      flush_mode interval
+      retry_type exponential_backoff
+      flush_thread_count 8
+      flush_interval 60s
+      retry_forever
+      retry_max_interval 30
+      chunk_limit_size 8M
+      queue_limit_length 32
+    </buffer>
+  </store>
+</match>
+4. Save and start the td-agent service systemctl start td-agent.service
+
+5. Create a file and paste the blow code to clear the td-agent logs by running (vi /opt/tdagent.sh) 
+
+
+#!/usr/bin/env bash
+>/var/log/td-agent/td-agent.log
+6. Provide the required permissions to the above directory and create a crontab for the same to run every min. 
+
+
+chmod 755 /opt/tdagent.sh
+crontab -e 
+*/1 * * * * sh /opt/tdagent.sh
+ 
+
+Adding/Creating the indexes for the above setup in Kibana.
+
+Login into Kibana https://dp-devops.jll.com/kibana
+
+Click the top left icon → Stack management → Index Patters.
+
+Click on create new index .
+
+Enter the index pattern for ex: env*,nifi-env*,tableau-env*.
+
+Click on next step, select @timestamp from the drop-down and click on create index pattern.
+
+Once successful you can redirect to the homepage and in the index pattern dropdown you should see the new indexs created.
+
+ 

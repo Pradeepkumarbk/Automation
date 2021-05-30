@@ -1,0 +1,18 @@
+---
+- include_vars: env.yaml
+
+- copy:
+    src: "{{ item }}"
+    dest: /opt/tabsetup/
+    owner: root
+    mode: 755
+  with_fileglob:
+    - /root/dp-red2-devops-ansible/ansible/roles/nodeconfig/files/*
+
+- name:  configuring tableau master and slave server
+  command: ./nodeconfig.sh '{{ password }}' -v
+  args:
+    chdir: "/opt/tabsetup/"
+  register: result
+
+- debug: var=result.stdout_lines

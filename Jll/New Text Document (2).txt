@@ -1,0 +1,87 @@
+Installation of Prometheus-agent on Kubernetes Cluster.
+
+ 
+
+Create/Add a task in Azure devops in their respective Platform setup environment job similar to Helm upgrade prometheus https://dev.azure.com/dp-red2-org-devops/RED2JLLDevOpsProject/_apps/hub/ms.vss-releaseManagement-web.cd-workflow-hub?definitionId=166&_a=definition-tasks&environmentId=651  (git reference link https://github.com/jll-labs/dp-red2-platform/tree/master/helm/prometheus-agent - Can't find link )
+
+Update the task with cluster details.
+
+Update the following helm parameters accordingly as per env
+
+nodeexporter.cluster=clustername(ex: jll-am-kube-dev2)
+
+env=env,nodeIP.Nifi=Nifivm-ip:9100,nodeIP.Tableau_1=Tabvm-ip1:9100,nodeIP.Tableau_2=Tabvm-ip2:9100,nodeIP.Tableau_3=Tabvm-ip3:9100  where, env=environment name (dev,preprod,etc) 
+
+          Note: Update b parameters only if Tableau and NIfi setup is available in respective env.
+
+  4. Once done save the changes create a release and deploy the job. 
+
+  5. After the deployment is successful you can verify if prometheus is installed in the cluster by running        Kubectl get pods(You should see prometheus pods created and running.)
+
+  6 . Run Kubectl get svc (a Prometheus service with a load balancer IP would be created you can copy paste the IP in the browser which opens up a prometheus UI)
+
+ 
+
+Installation of Node Exporter on Tableau and Nifi Vms
+
+Login to respective vms i.e Nifi or Tableau.
+
+Login via bastion pod of respective environment cluster i.e
+
+Kubectl exec -it bastion-0 -- /bin/bash
+
+ssh IP -l provisioner
+
+Login via Bastion vm of that subscription if present.
+
+Once logged in run the following 
+
+
+sudo -i
+wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-amd64.tar.gz
+tar -xf node_exporter-0.18.1.linux-amd64.tar.gz
+mv node_exporter-0.18.1.linux-amd64 node_exporter
+cd /etc/systemd/system/
+vim node_exporter.service
+Copy paste this code :
+
+
+[Unit]
+Description=Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+ExecStart=/root/node_exporter/node_exporter
+
+[Install]
+WantedBy=default.target
+Save and exit and run the following commands.
+
+
+systemctl daemon-reload
+systemctl start node_exporter
+systemctl enable node_exporter
+systemctl status node_exporter
+Note: Similar steps needs to be followed for the installation of node-exporter on respective vms.
+
+ 
+
+Integrating Prometheus-agent to Prometheus-master
+
+ 
+
+Note: In case of new environment, the environment values should be updated in the values.yaml and config.yaml files - https://github.com/jll-labs/dp-red2-platform  
+
+[Overview about the contents: 
+In the Prometheus Server - values.yaml, new environment values need to be added. 
+Prometheus Server.yaml - we are creating a stateful set and mapping the prometheus to our default URL-  https://dp-devops.jll.com/prometheus/  via Ingress rule. 
+In the config-map.yaml, we are passing the required data parameters which needs to be pulled from the Prometheus agent] 
+
+
+Edit the Azure devops job https://dev.azure.com/dp-red2-org-devops/RED2JLLDevOpsProject/_releaseDefinition?sourceId=166&_a=definition-tasks&source=ReleaseClone&environmentId=-1 
+
+Add the respective Prometheus-agent cluster loadbalncer IP which u get while running kubectl get svc.
+
+Save and Deploy.

@@ -1,0 +1,48 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.configFileName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    k8s-app: {{ .Values.configFileName }}
+data:
+  system.conf: |-
+    <system>
+      root_dir /tmp/fluentd-buffers/
+    </system>
+
+  output.conf: |-
+    # Input
+    <source>
+      @type forward
+      port 24224
+    </source>
+    
+    # Output
+    <match **>
+      @id elasticsearch
+      @type elasticsearch
+      @log_level info
+      include_tag_key true
+      scheme https
+      ssl_version TLSv1_2
+      host {{ .Values.host }}
+      port {{ .Values.port }}
+      user {{ .Values.username }}
+      password {{ .Values.password }}
+      logstash_format true
+      logstash_prefix {{ .Values.env }}
+      <buffer>
+        @type file
+        path /var/log/fluentd-buffers/kubernetes.system.buffer.aggregator
+        flush_mode interval
+        retry_type exponential_backoff
+        flush_thread_count 8
+        flush_interval 60s
+        retry_forever
+        retry_max_interval 30
+        chunk_limit_size 8M
+        queue_limit_length 32
+        overflow_action block
+      </buffer>
+    </match>

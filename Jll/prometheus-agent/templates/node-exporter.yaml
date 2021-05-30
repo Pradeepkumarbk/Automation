@@ -1,0 +1,28 @@
+apiVersion: apps/v1 
+kind: DaemonSet
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ .Values.nodeexporter.name }}
+spec:
+  selector:
+     matchLabels:
+       name: {{ .Values.nodeexporter.name }}
+  template:
+    metadata:
+      name:  {{ .Values.nodeexporter.name }}
+      labels:
+        name: {{ .Values.nodeexporter.name }}
+        cluster: {{ .Values.nodeexporter.cluster }}
+      annotations:
+        prometheus.io.scrape: "true"
+    spec:
+      hostPID: true
+      containers:
+      - name:  {{ .Values.nodeexporter.name }}
+        image: "{{ .Values.nodeexporter.image }}:{{ .Values.nodeexporter.tag }}"
+        securityContext:
+          privileged: true
+        ports:
+        - containerPort: {{ .Values.nodeexporter.port }}
+      imagePullSecrets:
+      - name: jlldataplatform

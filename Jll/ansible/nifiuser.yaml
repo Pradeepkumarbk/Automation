@@ -1,0 +1,14 @@
+---
+
+#- name: nifi setups
+#  hosts: nifi
+#  become: yes
+#  become_method: sudo
+#  become_user: root
+#  roles:
+#   - nifi
+
+- name: executing script
+  hosts: localhost
+  roles:
+   - nifiuser

@@ -1,0 +1,12 @@
+
+PLAY [executing script] ********************************************************
+
+TASK [setup] *******************************************************************
+ok: [localhost]
+
+TASK [nifiuser : user creation] ************************************************
+changed: [localhost -> localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=1    unreachable=0    failed=0   
+

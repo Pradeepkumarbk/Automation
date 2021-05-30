@@ -1,0 +1,7 @@
+- name: ssh user management 
+  hosts: "{{ target }}"
+  become: yes
+  vars:
+    everyone_root: true
+  roles:
+    - users

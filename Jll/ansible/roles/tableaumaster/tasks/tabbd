@@ -1,0 +1,12 @@
+---
+- include_vars: env.yaml
+
+- name: copying script files
+  copy:
+    src: "{{ item }}"
+    dest: /opt/tabsetup/
+    owner: root
+    mode: 0755
+  with_fileglob:
+    - /home/provisioner/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/*
+

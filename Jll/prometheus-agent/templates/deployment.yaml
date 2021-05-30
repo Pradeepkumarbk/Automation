@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appname }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appname }}
+    spec:
+      containers:
+      - name: prometheus
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/prometheus/"
+        ports:
+          - containerPort: {{ .Values.container.unsecureport }}
+        volumeMounts:
+          - name: prometheus-config-volume
+            mountPath: /etc/prometheus/
+          - name: prometheus-storage-volume
+            mountPath: /prometheus/
+      imagePullSecrets:
+      - name: jlldataplatform
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: {{ .Values.configFileName }}
+
+        - name: prometheus-storage-volume
+          emptyDir: {}

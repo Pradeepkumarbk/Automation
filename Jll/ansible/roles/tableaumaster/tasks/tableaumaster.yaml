@@ -1,0 +1,38 @@
+---
+- include_vars: env.yaml
+
+- name: copying script files
+  copy:
+    src: "{{ item }}"
+    dest: /opt/tabsetup/
+    owner: root
+    mode: 0755
+  with_fileglob:
+    - /root/dp-red2-devops-ansible/ansible/roles/tableaumaster/files/*
+
+- name:  Installing tableau server
+  command: sh tab-master-server-rhel-install.sh -u '{{clientid}}' -p '{{clientsecret}}' -i '{{tenantid}}' -t '{{ trail }}' -k '{{license}}' -s '{{azstorageaccount}}' -a '{{key}}' --regfile=reg_templ.json --identity_config_file=config.json --user=provisioner --driver_url=https://downloads.tableau.com/drivers/linux/yum/tableau-driver/tableau-postgresql-odbc-09.06.0500-1.x86_64.rpm --secret=secrets
+  args:
+    chdir: "/opt/tabsetup/"
+
+- name:  Creating SSL Directory
+  command: "{{ item }}"
+  args:
+    chdir: "/var/opt/tableau/tableau_server/data/"
+  with_items:
+        - mkdir ssl
+        - chown tableau:tableau ssl
+
+- name:  download certs
+  command: sh -x cert.sh '{{ sa }}' '{{ key }}'
+  args:
+    chdir: "/opt/tabsetup/"
+
+
+- name:  changing permissions
+  command: "{{ item }}"
+  args:
+    chdir: "/var/opt/tableau/tableau_server/data/"
+  with_items:
+        - chown -R tableau:tableau ssl
+        - chmod -R 777 ssl

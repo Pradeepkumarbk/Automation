@@ -1,0 +1,8 @@
+---
+- name: nifi setups
+  hosts: nifi
+  become: yes
+  become_method: sudo
+  become_user: root
+  roles:
+   - nifi

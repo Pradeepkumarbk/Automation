@@ -1,0 +1,65 @@
+---
+- include_vars: env.yaml
+
+- name: copying script files
+  copy:
+    src: "{{ item }}"
+    dest: /opt/nifi/
+    owner: root
+    mode: 0755
+  with_fileglob:
+    - /root/dp-red2-devops-ansible/ansible/roles/nifi/files/*
+
+
+- name: Creates directory
+  file:
+    path: /opt/nifiserver/
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name:  user creation
+  command: sudo sh -x cert.sh '{{ sa }}' '{{ key }}'
+  args:
+    chdir: "/opt/nifi/"
+
+- name:  Installing nifi server
+  command: sudo sh -x nifi.sh -f '{{ dname }}' -u '{{ user }}' -c '{{ clientid }}' -s '{{ clientsecret }}' -d '{{ openid }}' -k /opt/nifi/keystore.jks -t /opt/nifi/truststore.jks -K '{{ keystorepassword }}' -T '{{ truststorepassword }}' -p '{{ keypassword }}'
+  args:
+    chdir: "/opt/nifi/"
+
+- name: Wait for server to restart
+  become: false
+  wait_for: timeout=180
+  delegate_to: localhost
+
+- name: enable nifi service on startup
+  systemd:
+    name: nifi.service
+    daemon_reload: yes
+    enabled: yes
+    masked: no
+
+- name: Start service nif, if not running
+  service:
+    name: nifi
+    state: started
+
+- name: enable nifi-registry service on startup
+  systemd:
+    name: nifi-registry.service
+    daemon_reload: yes
+    enabled: yes
+    masked: no
+
+- name: Start service nifi-registry, if not running
+  service:
+    name: nifi-registry
+    state: started
+
+
+- name:  user creation
+  command: ./hosts.sh
+  args:
+    chdir: "/opt/nifi/"

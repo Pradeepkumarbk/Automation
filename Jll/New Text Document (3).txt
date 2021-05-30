@@ -1,0 +1,6 @@
+https://cezarypiatek.github.io/post/scheduled-elasticsearch-cleanup/
+https://devopscube.com/setup-prometheus-monitoring-on-kubernetes/
+https://medium.com/cloud-native-the-gathering/remotely-connecting-through-kubernetes-to-a-jmx-agent-in-a-spring-boot-1-x-cf83bb83f499
+https://github.com/anryko/kubernetes-monitoring
+https://awesome-prometheus-alerts.grep.to/rules.html
+https://www.howtoforge.com/tutorial/how-to-install-prometheus-and-node-exporter-on-centos-8/

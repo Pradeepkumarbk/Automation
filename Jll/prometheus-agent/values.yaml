@@ -1,0 +1,53 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+namespace: default
+configFileName: prometheus-agent-config
+appname: prometheus-agent
+env: dev
+
+image:
+  repository: jlldataplatform.azurecr.io/prometheus
+  tag: v1
+  pullPolicy: Always
+
+container:
+  unsecureport: 9090
+  
+resources:
+  requests:
+    cpu: 100m
+    memory: 1Gi
+  limits:
+    cpu: 4
+    memory: 6Gi
+    
+service:
+  name: prometheus-service
+  type: LoadBalancer
+  port: 80
+
+nodeexporter:
+  name: prom-node-exporter
+  cluster: jll-am-kube-dev2
+  port: 9100
+  image: jlldataplatform.azurecr.io/node-exporter
+  tag: v1
+
+nodeIP:
+  Nifi: 1.2.3.5
+  Tableau_1: 1.2.3.5
+  Tableau_2: 1.2.3.5
+  Tableau_3: 1.2.3.5
+  perf1: 1.2.3.5
+  perf2: 1.2.3.5
+  perf3: 1.2.3.5
+
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
